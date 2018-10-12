@@ -11,9 +11,13 @@ setuptools.setup(
     packages=setuptools.find_packages(),
     license='MIT',
 
+    install_requires=[
+
+    ],
+
     entry_points={
         'console_scripts': [
-            'audionmf = audionmf.main:main',
+            'audionmf = audionmf.__main__:main',
         ],
     }
 )
