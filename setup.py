@@ -12,7 +12,8 @@ setuptools.setup(
     license='MIT',
 
     install_requires=[
-
+        "click",
+        "numpy"
     ],
 
     entry_points={

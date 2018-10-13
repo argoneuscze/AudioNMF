@@ -1,8 +1,8 @@
-from audionmf.cli import start_cli
+from audionmf.cli import cli
 
 
 def main():
-    start_cli()
+    cli()
 
 
 if __name__ == '__main__':
