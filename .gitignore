@@ -88,3 +88,9 @@ venv.bak/
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+
+# Compressed/Audio Files
+*.anmf
+*.wav
+!examples/**/*.wav
+!examples/**/*.anmf

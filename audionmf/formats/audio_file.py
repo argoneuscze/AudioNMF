@@ -1,0 +1,18 @@
+from audionmf.formats.audio_format_wav import AudioFormatWAV
+
+
+class AudioFile:
+    def __init__(self, input_file, audio_format):
+        self.input_file = input_file
+        self.audio_format = audio_format
+
+    def compress(self, output_file):
+        print('compressing {} to {} using WAV'.format(self.input_file, output_file))
+        data = self.audio_format.get_nmf_data(self.input_file)
+        data.write_file(output_file)
+
+    @staticmethod
+    def read_file(handle, filetype):
+        if filetype == 'wav':
+            return AudioFile(handle, AudioFormatWAV())
+        return None

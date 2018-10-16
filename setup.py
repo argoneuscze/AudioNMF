@@ -13,7 +13,8 @@ setuptools.setup(
 
     install_requires=[
         "click",
-        "numpy"
+        "numpy",
+        "scipy"
     ],
 
     entry_points={
