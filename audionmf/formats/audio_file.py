@@ -1,4 +1,5 @@
 from audionmf.formats.audio_format_wav import AudioFormatWAV
+from audionmf.nmf.nmf_data import NMFData
 
 
 class AudioFile:
@@ -8,7 +9,8 @@ class AudioFile:
 
     def compress(self, output_file):
         print('compressing {} to {} using WAV'.format(self.input_file, output_file))
-        data = self.audio_format.get_nmf_data(self.input_file)
+        data = NMFData()
+        self.audio_format.get_nmf_data(self.input_file, data)
         data.write_file(output_file)
 
     @staticmethod
