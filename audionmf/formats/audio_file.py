@@ -11,7 +11,10 @@ class AudioFile:
         print('compressing {} to {} using WAV'.format(self.input_file, output_file))
         data = NMFData()
         self.audio_format.get_nmf_data(self.input_file, data)
-        data.write_file(output_file)
+        data.write_nmf_file(output_file)
+
+        # debug
+        data.write_audio_file("test.wav", self.audio_format)
 
     @staticmethod
     def read_file(handle, filetype):

@@ -14,5 +14,6 @@ class AudioFormatWAV(AudioFormat):
             c.add_sample_array(raw_data[:, i])
             nmf_data.add_channel(c)
 
-    def write_data(self, nmf_data, output_file):
-        wavfile.write(output_file, nmf_data.rate, nmf_data.samples)  # rate and data TODO
+    def write_file(self, nmf_data, output_file):
+        all_samples = numpy.column_stack((samples for samples in (channel.samples for channel in nmf_data.channels)))
+        wavfile.write(output_file, nmf_data.sample_rate, all_samples)
