@@ -8,6 +8,8 @@ from audionmf.nmf.channel import Channel
 class AudioFormatWAV(AudioFormat):
     def get_nmf_data(self, wav_file, nmf_data):
         rate, raw_data = wavfile.read(wav_file)
+        if raw_data.dtype != 'int16':
+            raise Exception('WAV format must be 16-bit integers')  # TODO convert
         nmf_data.sample_rate = rate
         for i in range(numpy.size(raw_data, 1)):
             c = Channel()

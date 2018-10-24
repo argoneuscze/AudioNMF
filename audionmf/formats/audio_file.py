@@ -13,9 +13,6 @@ class AudioFile:
         self.audio_format.get_nmf_data(self.input_file, data)
         data.write_nmf_file(output_file)
 
-        # debug
-        data.write_audio_file("test.wav", self.audio_format)
-
     @staticmethod
     def read_file(handle, filetype):
         if filetype == 'wav':
