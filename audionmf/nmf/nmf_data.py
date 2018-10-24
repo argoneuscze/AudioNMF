@@ -46,11 +46,13 @@ class NMFData:
         for matrix, padding in [ch.to_positive_matrix() for ch in self.channels]:
             # TODO separate into another file?
 
-            nmf = nimfa.Nmf(matrix, max_iter=200)
+            # compute NMF
+            nmf = nimfa.Nmf(matrix, max_iter=500, rank=50)
             nmf_res = nmf()
             W = nmf_res.basis()
             H = nmf_res.coef()
 
+            # write both matrices to file
             f.write(struct.pack('<IIIII', padding, W.shape[0], W.shape[1], H.shape[0], H.shape[1]))
 
             f.write(struct.pack('<' + 'd' * W.size, *W.flat))
@@ -71,10 +73,12 @@ class NMFData:
         for _ in range(channel_count):
             channel = Channel()
 
+            # read information about channel
             padding, wX, wY, hX, hY = struct.unpack('<IIIII', f.read(20))
             wSize = wX * wY
             hSize = hX * hY
 
+            # read matrix
             dt = numpy.dtype(numpy.float64)
             dt = dt.newbyteorder('<')
             wRaw = numpy.frombuffer(f.read(wSize * 8), dtype=dt)
@@ -83,8 +87,8 @@ class NMFData:
             W = numpy.reshape(wRaw, (wX, wY))
             H = numpy.reshape(hRaw, (hX, hY))
 
-            # decrement and convert back to 16-bit signed integers
-            channel_data = numpy.matmul(W, H).reshape(-1) - 2 ** 15
+            # remove padding, decrement and convert back to 16-bit signed integers
+            channel_data = numpy.matmul(W, H).reshape(-1)[:-padding] - 2 ** 15
             channel_data = channel_data.astype(numpy.int16)
 
             channel.add_sample_array(channel_data)
