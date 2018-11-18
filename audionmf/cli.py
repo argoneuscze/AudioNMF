@@ -2,8 +2,7 @@ import os
 
 import click as click
 
-from audionmf.formats.audio_file import AudioFile
-from audionmf.formats.audio_file_compressed import AudioFileCompressed
+from audionmf.audio.audio_data import AudioData
 
 
 def get_filename_ext(path):
@@ -16,18 +15,18 @@ def get_output_handle(input_filename, filetype):
     return open(target_name, 'wb')
 
 
-def compress(input_file, output_file, filetype):
-    audio = AudioFile.read_file(input_file, filetype)
+def compress(input_file, output_file, audio_filetype, compression_filetype):
+    audio = AudioData.from_audio_file(input_file, audio_filetype)
 
     if audio is None:
-        print('invalid file format: {}'.format(filetype))
+        print('invalid file format: {}'.format(audio_filetype))
     else:
-        audio.compress(output_file)
+        audio.write_compressed_file(output_file, compression_filetype)
 
 
-def decompress(input_file, output_file, filetype):
-    audio = AudioFileCompressed.read_file(input_file)
-    audio.decompress(output_file, filetype)
+def decompress(input_file, output_file, compression_filetype, audio_filetype):
+    audio = AudioData.from_compressed_file(input_file, compression_filetype)
+    audio.write_audio_file(output_file, audio_filetype)
 
 
 @click.group()
@@ -44,7 +43,7 @@ def compress_command(input_file, output_file):
     if output_file is None:
         output_file = get_output_handle(filename, 'anmf')
 
-    compress(input_file, output_file, filetype)
+    compress(input_file, output_file, filetype, 'anmf')
 
     input_file.close()
     output_file.close()
@@ -58,7 +57,7 @@ def decompress_command(input_file, output_file, filetype):
     if output_file is None:
         output_file = get_output_handle(input_file.name, filetype)
 
-    decompress(input_file, output_file, filetype)
+    decompress(input_file, output_file, 'anmf', filetype)
 
     input_file.close()
     output_file.close()
@@ -68,6 +67,6 @@ def decompress_command(input_file, output_file, filetype):
 @click.argument('input_file', type=click.File('rb'))
 def debug_command(input_file):
     with open('debug.anmf', 'wb') as anmf_file:
-        compress(input_file, anmf_file, 'wav')
+        compress(input_file, anmf_file, 'wav', 'anmf')
     with open('debug.anmf', 'rb') as anmf_file, open('debug.wav', 'wb') as wav_file:
-        decompress(anmf_file, wav_file, 'wav')
+        decompress(anmf_file, wav_file, 'anmf', 'wav')

@@ -3,10 +3,10 @@ import struct
 import nimfa
 import numpy
 
-from audionmf.nmf.channel import Channel
+from audionmf.audio.channel import Channel
 
 
-class NMFData:
+class NMFCompressor:
     """
     .anmf data format spec
 
@@ -24,26 +24,21 @@ class NMFData:
     8        4              # of columns (W) [c1], 32-bit unsigned integer
     12       4              # of rows (H) [r2], 32-bit unsigned integer
     16       4              # of columns (H) [c2], 32-bit unsigned integer
-    20       r1*c1 + r2*c2  data (W and then H), row by row, 64-bit floats
+    20       r1*c1 + r2*c2  data (W and then H), row by row, 64-bit floats # TODO use 32-bit floats?
 
     note the data stored is unsigned integers, after multiplication it has to be
     converted back to signed integers
 
     """
 
-    def __init__(self):
-        self.sample_rate = 0  # todo sanity check
-        self.channels = list()
-        ...  # TODO various metadata, rate, samples, etc.
+    def compress(self, audio_data, output_fd):
+        # TODO rewrite
+        f = output_fd
 
-    def add_channel(self, channel):
-        self.channels.append(channel)
-
-    def write_nmf_file(self, f):
         f.write(b'ANMF')
-        f.write(struct.pack('<HI', len(self.channels), self.sample_rate))
+        f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
-        for matrix, padding in [ch.to_positive_matrix() for ch in self.channels]:
+        for matrix, padding in [ch.to_positive_matrix() for ch in audio_data.channels]:
             # TODO separate into another file?
 
             # compute NMF
@@ -58,17 +53,15 @@ class NMFData:
             f.write(struct.pack('<' + 'd' * W.size, *W.flat))
             f.write(struct.pack('<' + 'd' * H.size, *H.flat))
 
-    def write_audio_file(self, output_file, audio_format):
-        audio_format.write_file(self, output_file)
+    def decompress(self, input_fd, audio_data):
+        # TODO rewrite
+        f = input_fd
 
-    @staticmethod
-    def from_file(f):
-        nmf_data = NMFData()
         data = f.read(4)
         if data != b'ANMF':
             raise Exception('Invalid file format. Expected .anmf.')
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))
-        nmf_data.sample_rate = sample_rate
+        audio_data.sample_rate = sample_rate
 
         for _ in range(channel_count):
             channel = Channel()
@@ -79,6 +72,7 @@ class NMFData:
             hSize = hX * hY
 
             # read matrix
+            # todo Channel.from_positive_matrix()
             dt = numpy.dtype(numpy.float64)
             dt = dt.newbyteorder('<')
             wRaw = numpy.frombuffer(f.read(wSize * 8), dtype=dt)
@@ -92,6 +86,4 @@ class NMFData:
             channel_data = channel_data.astype(numpy.int16)
 
             channel.add_sample_array(channel_data)
-            nmf_data.add_channel(channel)
-
-        return nmf_data
+            audio_data.add_channel(channel)
