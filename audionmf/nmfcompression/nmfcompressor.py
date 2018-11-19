@@ -4,6 +4,7 @@ import nimfa
 import numpy
 
 from audionmf.audio.channel import Channel
+from audionmf.nmfcompression.matrix_util import array_to_positive_matrix
 
 
 class NMFCompressor:
@@ -38,8 +39,9 @@ class NMFCompressor:
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
-        for matrix, padding in [ch.to_positive_matrix() for ch in audio_data.channels]:
+        for channel in audio_data.channels:
             # TODO separate into another file?
+            matrix, padding = array_to_positive_matrix(channel.samples)
 
             # compute NMF
             nmf = nimfa.Nmf(matrix, max_iter=500, rank=50)
