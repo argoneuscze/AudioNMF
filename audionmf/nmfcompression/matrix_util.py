@@ -1,14 +1,29 @@
 import math
+import struct
 
 import numpy
 
 
 def serialize_matrix(fd, matrix):
-    ...  # todo write to open file
+    fd.write(struct.pack('<II', matrix.shape[0], matrix.shape[1]))
+    fd.write(struct.pack('<' + 'd' * matrix.size, *matrix.flat))
 
 
 def deserialize_matrix(fd):
-    ...
+    dt = numpy.dtype(numpy.float64)
+    dt = dt.newbyteorder('<')
+    rows, cols = struct.unpack('<II', fd.read(8))
+    matrix = numpy.frombuffer(fd.read(rows * cols * 8), dtype=dt)
+    matrix = numpy.reshape(matrix, newshape=(rows, cols))
+    return matrix
+
+
+def array_pad_split(ary, n):
+    padding = (-len(ary)) % n
+    new_ary = numpy.pad(ary, (0, padding), mode='constant', constant_values=0)
+    ary_count = len(new_ary) // n
+    split_ary = numpy.split(new_ary, ary_count)
+    return split_ary, padding
 
 
 def array_to_positive_matrix(ary):
