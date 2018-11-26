@@ -40,3 +40,35 @@ def array_to_positive_matrix(ary):
 
     # return matrix and padding
     return final_matrix, padding
+
+
+def array_to_fft(array):
+    # runs RFFT on an array and returns the real and imaginary arrays separately
+    fft = numpy.fft.rfft(array)
+
+    # we get FFT_SIZE / 2 + 1 samples instead of FFT_SIZE / 2, but the first and last
+    # only have real components, so we can put the last one's real component
+    # into the first's complex component to save a value
+    fft[0] += fft[-1].real * 1j
+
+    # remove the last element altogether
+    fft = fft[:-1]
+
+    # return the arrays
+    return fft.real, fft.imag
+
+
+def fft_to_array(real_ary, imag_ary):
+    # reverses the process above
+    # join the arrays back together
+    fft_ary = real_ary + imag_ary * 1j
+
+    # fix the values
+    fft_ary = numpy.append(fft_ary, fft_ary[0].imag)
+    fft_ary[0] = fft_ary[0].real
+
+    # run inverse FFT
+    ifft = numpy.fft.irfft(fft_ary)
+
+    # return the original array
+    return ifft
