@@ -5,7 +5,7 @@ import numpy
 
 from audionmf.audio.channel import Channel
 from audionmf.nmfcompression.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix, array_to_fft, \
-    fft_to_array
+    fft_to_array, increment_by_min
 
 
 class NMFCompressor:
@@ -66,42 +66,71 @@ class NMFCompressor:
 
             # build two sets of matrices - one with real coefficients and one with complex
             matrices_real = list()
-            matrices_imag = list()  # todo later
+            matrices_imag = list()
 
-            # create initial arrays
-            matrix_r = numpy.zeros(shape=(len(samples), self.FFT_SIZE // 2))
-            matrix_c = numpy.zeros(shape=(len(samples), self.FFT_SIZE // 2))
+            # find actual chunk size
+            chunk_size = len(samples)
+            if self.ARRAY_SIZE is not None:
+                if self.ARRAY_SIZE < chunk_size:
+                    chunk_size = self.ARRAY_SIZE
 
-            # run FFT on each part
-            for i, sample_part in enumerate(samples):
+            # create initial matrices
+            matrix_r = matrix_c = None
+
+            # run FFT on each part and save each chunk
+            i = 0
+            for sample_part in samples:
+                # check if we should make new matrices
+                if i % chunk_size == 0:
+                    # add existing matrices to the lists
+                    if matrix_r is not None:
+                        matrices_real.append(matrix_r)
+                        matrices_imag.append(matrix_c)
+
+                    # update to lower chunk size if close to the end to save a bit of space
+                    remaining = len(samples) - len(matrices_real) * chunk_size
+                    if remaining < chunk_size:
+                        chunk_size = remaining
+
+                    # create new matrices
+                    matrix_r = numpy.zeros(shape=(chunk_size, self.FFT_SIZE // 2))
+                    matrix_c = numpy.zeros(shape=(chunk_size, self.FFT_SIZE // 2))
+
+                    # reset index
+                    i = 0
+
                 # assign the values to the matrices
                 matrix_r[i], matrix_c[i] = array_to_fft(sample_part)
 
-            # increment both matrices by their minimum value so that there aren't any negative values
-            r_min = abs(numpy.amin(matrix_r))
-            matrix_r += r_min
+                # increment index
+                i += 1
 
-            c_min = abs(numpy.amin(matrix_c))
-            matrix_c += c_min
+            # add the left-over matrices
+            matrices_real.append(matrix_r)
+            matrices_imag.append(matrix_c)
+            # TODO split matrices out of a large one
 
-            # write padding and minimum values to be subtracted later
-            f.write(struct.pack('<Idd', padding, r_min, c_min))
+            # write padding of samples after decompression and the amount of matrices / 4
+            # (there's imaginary and real matrices, we only write down the count of the real ones,
+            # which are decomposed via NMF)
+            f.write(struct.pack('<II', padding, len(matrices_real)))
 
-            # run NMF on both matrices
-            nmf_r = nimfa.Nmf(matrix_r, max_iter=self.NMF_MAX_ITER, rank=self.NMF_RANK)()
-            Wr = nmf_r.basis()
-            Hr = nmf_r.coef()
+            # process all the matrices, real ones first
+            for matrix in matrices_real + matrices_imag:
+                # increment all matrices by their minimum value so that there aren't any negative values
+                matrix, min_val = increment_by_min(matrix)
 
-            nmf_c = nimfa.Nmf(matrix_c, max_iter=self.NMF_MAX_ITER, rank=self.NMF_RANK)()
-            Wc = nmf_c.basis()
-            Hc = nmf_c.coef()
+                # write minimum value to be subtracted later
+                f.write(struct.pack('<d', min_val))
 
-            # write both (all 4) matrices into the file
-            serialize_matrix(f, Wr)
-            serialize_matrix(f, Hr)
+                # run NMF on the matrix, getting its weights and coefficients
+                nmf = nimfa.Nmf(matrix, max_iter=self.NMF_MAX_ITER, rank=self.NMF_RANK)()
+                W = nmf.basis()
+                H = nmf.coef()
 
-            serialize_matrix(f, Wc)
-            serialize_matrix(f, Hc)
+                # write both matrices into the file
+                serialize_matrix(f, W)
+                serialize_matrix(f, H)
 
     def decompress(self, input_fd, audio_data):
         # TODO rewrite
@@ -116,22 +145,31 @@ class NMFCompressor:
         for _ in range(channel_count):
             channel = Channel()
 
-            # read information about channel
-            padding, r_min, c_min = struct.unpack('<Idd', f.read(20))
+            # read padding and amount of matrices / 4
+            padding, real_matrix_count = struct.unpack('<II', f.read(8))
 
-            # read matrices
-            Wr = deserialize_matrix(f)
-            Hr = deserialize_matrix(f)
+            all_matrices = list()
 
-            Wc = deserialize_matrix(f)
-            Hc = deserialize_matrix(f)
+            # there's 4 times more matrices, see above
+            for i in range(real_matrix_count * 2):
+                # read minimum value
+                min_val = struct.unpack('<d', f.read(8))
 
-            # multiply matrices and subtract old min values
-            matrix_r = numpy.matmul(Wr, Hr) - r_min
-            matrix_c = numpy.matmul(Wc, Hc) - c_min
+                # read both NMF matrices
+                W = deserialize_matrix(f)
+                H = deserialize_matrix(f)
+
+                # multiply matrices and subtract old min values
+                matrix = numpy.matmul(W, H) - min_val
+
+                # add to list
+                all_matrices.append(matrix)
+
+            matrix_real = numpy.concatenate(all_matrices[:len(all_matrices) // 2], 0)
+            matrix_imag = numpy.concatenate(all_matrices[len(all_matrices) // 2:], 0)
 
             # join the matrices back together
-            fft_matrix = matrix_r + matrix_c * 1j
+            fft_matrix = matrix_real + matrix_imag * 1j
 
             # iterate over each row and run inverse FFT
             samples = numpy.zeros(shape=(self.FFT_SIZE * fft_matrix.shape[0]))
@@ -142,8 +180,6 @@ class NMFCompressor:
 
             # remove padding and convert back to 16-bit signed integers
             samples = samples[:-padding].astype(numpy.int16)
-
-            print(samples)
 
             # add samples to channel
             channel.add_sample_array(samples)

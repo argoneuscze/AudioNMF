@@ -72,3 +72,9 @@ def fft_to_array(real_ary, imag_ary):
 
     # return the original array
     return ifft
+
+
+def increment_by_min(matrix):
+    # increments matrix by its lowest value and returns the structure and the absolute value
+    min_val = abs(numpy.amin(matrix))
+    return matrix + min_val, min_val
