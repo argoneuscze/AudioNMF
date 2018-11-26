@@ -42,16 +42,15 @@ class NMFCompressor:
     FFT_SIZE = 1152
 
     # how many chunks of FFT to group up together
-    # e.g. 576 bins, ARRAY_SIZE = 200 => 576x200 before NMF
+    # e.g. 576 bins, ARRAY_SIZE = 200 => 200x576 before NMF
     # if set to None it will process all the chunks at once
-    ARRAY_SIZE = 500
+    ARRAY_SIZE = 600
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 400
+    NMF_MAX_ITER = 200
     NMF_RANK = 50
 
     def compress(self, audio_data, output_fd):
-        # TODO rewrite
         f = output_fd
 
         # debug
@@ -59,6 +58,8 @@ class NMFCompressor:
         # temp_c = Channel()
         # temp_c.add_sample_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
         # audio_data.channels = [temp_c]
+
+        print('Compressing...')
 
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
@@ -122,9 +123,10 @@ class NMFCompressor:
                 serialize_matrix(f, H)
 
     def decompress(self, input_fd, audio_data):
-        # TODO rewrite
         f = input_fd
-        print('====')
+
+        print('Decompressing...')
+
         data = f.read(4)
         if data != b'ANMF':
             raise Exception('Invalid file format. Expected .anmf.')
