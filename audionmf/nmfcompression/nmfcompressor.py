@@ -1,3 +1,4 @@
+import math
 import struct
 
 import nimfa
@@ -31,6 +32,8 @@ class NMFCompressor:
     note the data stored is unsigned integers, after multiplication it has to be
     converted back to signed integers
 
+    # TODO this whole thing is outdated
+
     """
 
     # bin count = FFT_SIZE / 2
@@ -41,11 +44,11 @@ class NMFCompressor:
     # how many chunks of FFT to group up together
     # e.g. 576 bins, ARRAY_SIZE = 200 => 576x200 before NMF
     # if set to None it will process all the chunks at once
-    ARRAY_SIZE = None
+    ARRAY_SIZE = 500
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 10
-    NMF_RANK = 30
+    NMF_MAX_ITER = 400
+    NMF_RANK = 50
 
     def compress(self, audio_data, output_fd):
         # TODO rewrite
@@ -64,51 +67,37 @@ class NMFCompressor:
             # split samples into equal parts
             samples, padding = array_pad_split(channel.samples, self.FFT_SIZE)
 
-            # build two sets of matrices - one with real coefficients and one with complex
+            # create initial matrices
+            matrix_r = numpy.zeros(shape=(len(samples), self.FFT_SIZE // 2))
+            matrix_c = numpy.zeros(shape=(len(samples), self.FFT_SIZE // 2))
+
+            # run FFT on each part and save each chunk
+            for i, sample_part in enumerate(samples):
+                matrix_r[i], matrix_c[i] = array_to_fft(sample_part)
+
+            # build two sets of smaller matrices - one with real coefficients and one with complex
             matrices_real = list()
             matrices_imag = list()
 
-            # find actual chunk size
-            chunk_size = len(samples)
-            if self.ARRAY_SIZE is not None:
-                if self.ARRAY_SIZE < chunk_size:
-                    chunk_size = self.ARRAY_SIZE
+            # split matrices into smaller chunks
+            if self.ARRAY_SIZE is None:
+                # if we're using one large chunk
+                matrices_real.append(matrix_r)
+                matrices_imag.append(matrix_c)
+            else:
+                # find actual chunk size
+                chunk_size = len(samples)
+                if self.ARRAY_SIZE is not None:
+                    if self.ARRAY_SIZE < chunk_size:
+                        chunk_size = self.ARRAY_SIZE
 
-            # create initial matrices
-            matrix_r = matrix_c = None
+                # split into submatrices
+                for i in range(int(math.ceil(len(samples) / chunk_size))):
+                    submatrix_r = matrix_r[i * chunk_size:i * chunk_size + chunk_size]
+                    submatrix_c = matrix_c[i * chunk_size:i * chunk_size + chunk_size]
 
-            # run FFT on each part and save each chunk
-            i = 0
-            for sample_part in samples:
-                # check if we should make new matrices
-                if i % chunk_size == 0:
-                    # add existing matrices to the lists
-                    if matrix_r is not None:
-                        matrices_real.append(matrix_r)
-                        matrices_imag.append(matrix_c)
-
-                    # update to lower chunk size if close to the end to save a bit of space
-                    remaining = len(samples) - len(matrices_real) * chunk_size
-                    if remaining < chunk_size:
-                        chunk_size = remaining
-
-                    # create new matrices
-                    matrix_r = numpy.zeros(shape=(chunk_size, self.FFT_SIZE // 2))
-                    matrix_c = numpy.zeros(shape=(chunk_size, self.FFT_SIZE // 2))
-
-                    # reset index
-                    i = 0
-
-                # assign the values to the matrices
-                matrix_r[i], matrix_c[i] = array_to_fft(sample_part)
-
-                # increment index
-                i += 1
-
-            # add the left-over matrices
-            matrices_real.append(matrix_r)
-            matrices_imag.append(matrix_c)
-            # TODO split matrices out of a large one
+                    matrices_real.append(submatrix_r)
+                    matrices_imag.append(submatrix_c)
 
             # write padding of samples after decompression and the amount of matrices / 4
             # (there's imaginary and real matrices, we only write down the count of the real ones,
