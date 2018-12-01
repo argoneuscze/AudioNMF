@@ -44,20 +44,20 @@ class NMFCompressorFFT:
     # how many chunks of FFT to group up together
     # e.g. 576 bins, ARRAY_SIZE = 200 => 200x576 before NMF
     # if set to None it will process all the chunks at once
-    ARRAY_SIZE = 600
+    ARRAY_SIZE = 100
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 200
+    NMF_MAX_ITER = 400
     NMF_RANK = 50
 
     def compress(self, audio_data, output_fd):
         f = output_fd
 
         # debug
-        # self.FFT_SIZE = 10
-        # temp_c = Channel()
-        # temp_c.add_sample_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-        # audio_data.channels = [temp_c]
+        temp_c = Channel()
+        n = 2000
+        temp_c.add_sample_array([(x - (n // 2)) * 40 for x in range(n)])
+        audio_data.channels = [temp_c]
 
         print('Compressing...')
 
@@ -65,6 +65,8 @@ class NMFCompressorFFT:
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
         for channel in audio_data.channels:
+            print(channel.samples)
+
             # split samples into equal parts
             samples, padding = array_pad_split(channel.samples, self.FFT_SIZE)
 
@@ -171,6 +173,8 @@ class NMFCompressorFFT:
 
             # remove padding and convert back to 16-bit signed integers
             samples = samples[:-padding].astype(numpy.int16)
+
+            print(samples)
 
             # add samples to channel
             channel.add_sample_array(samples)
