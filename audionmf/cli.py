@@ -67,6 +67,6 @@ def decompress_command(input_file, output_file, filetype):
 @click.argument('input_file', type=click.File('rb'))
 def debug_command(input_file):
     with open('debug.anmf', 'wb') as anmf_file:
-        compress(input_file, anmf_file, 'wav', 'anmf')
+        compress(input_file, anmf_file, 'wav', 'anmfr')
     with open('debug.anmf', 'rb') as anmf_file, open('debug.wav', 'wb') as wav_file:
-        decompress(anmf_file, wav_file, 'anmf', 'wav')
+        decompress(anmf_file, wav_file, 'anmfr', 'wav')

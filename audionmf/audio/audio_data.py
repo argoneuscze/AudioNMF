@@ -1,5 +1,6 @@
 from audionmf.fileformats.audio_format_wav import AudioFormatWAV
-from audionmf.nmfcompression.nmfcompressor import NMFCompressor
+from audionmf.nmfcompression.nmfcompressor_fft import NMFCompressorFFT
+from audionmf.nmfcompression.nmfcompressor_raw import NMFCompressorRaw
 
 
 def get_audio_format(string):
@@ -10,7 +11,9 @@ def get_audio_format(string):
 
 def get_compression_format(string):
     if string == 'anmf':
-        return NMFCompressor()
+        return NMFCompressorFFT()
+    elif string == 'anmfr':
+        return NMFCompressorRaw()
     raise KeyError('Invalid compression format.')
 
 

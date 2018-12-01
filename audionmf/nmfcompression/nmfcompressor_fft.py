@@ -9,7 +9,7 @@ from audionmf.nmfcompression.matrix_util import array_pad_split, serialize_matri
     fft_to_array, increment_by_min
 
 
-class NMFCompressor:
+class NMFCompressorFFT:
     """
     .anmf data format spec
 
