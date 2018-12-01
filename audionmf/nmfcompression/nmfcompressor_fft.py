@@ -55,8 +55,8 @@ class NMFCompressorFFT:
 
         # debug
         temp_c = Channel()
-        n = 2000
-        temp_c.add_sample_array([(x - (n // 2)) * 40 for x in range(n)])
+        n = 4000  # sample size
+        temp_c.add_sample_array([(x - (n // 2)) * 16 for x in range(n)])
         audio_data.channels = [temp_c]
 
         print('Compressing...')
