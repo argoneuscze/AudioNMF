@@ -7,7 +7,8 @@ The text part is visible [**here**](https://github.com/argoneuscze/thesis).
 ## TODO
 
 * Experiment with different chunk sizes / data types
-* Experiment with CELT/SILK
+* Tinker with Nimfa NMF settings
+* Learn about CELT/SILK
 
 ## Notes
 
