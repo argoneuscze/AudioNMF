@@ -9,6 +9,7 @@ The text part is visible [**here**](https://github.com/argoneuscze/thesis).
 * Experiment with different chunk sizes / data types
 * Tinker with Nimfa NMF settings
 * Learn about CELT/SILK
+* Use MDCT instead of FFT and make sure to use KBD windowing
 
 ## Notes
 
