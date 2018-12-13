@@ -10,6 +10,7 @@ The text part is visible [**here**](https://github.com/argoneuscze/thesis).
 * Tinker with Nimfa NMF settings
 * Learn about CELT/SILK
 * Use MDCT instead of FFT and make sure to use KBD windowing
+* Look into [GstPEAQ](https://github.com/HSU-ANT/gstpeaq) for measuring audio quality
 
 ## Notes
 
