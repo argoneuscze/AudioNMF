@@ -1,20 +1,31 @@
 from audionmf.fileformats.audio_format_wav import AudioFormatWAV
 from audionmf.nmfcompression.nmfcompressor_fft import NMFCompressorFFT
+from audionmf.nmfcompression.nmfcompressor_mdct import NMFCompressorMDCT
 from audionmf.nmfcompression.nmfcompressor_raw import NMFCompressorRaw
+
+audio_formats = {
+    'wav': AudioFormatWAV
+}
+
+compression_schemes = {
+    'anmf': NMFCompressorMDCT,
+    'anmfr': NMFCompressorRaw,
+    'anmff': NMFCompressorFFT
+}
 
 
 def get_audio_format(string):
-    if string == 'wav':
-        return AudioFormatWAV()
-    raise KeyError('Invalid audio format.')
+    try:
+        return audio_formats[string]()
+    except KeyError:
+        raise KeyError('Invalid audio format.')
 
 
 def get_compression_format(string):
-    if string == 'anmf':
-        return NMFCompressorFFT()
-    elif string == 'anmfr':
-        return NMFCompressorRaw()
-    raise KeyError('Invalid compression format.')
+    try:
+        return compression_schemes[string]()
+    except KeyError:
+        raise KeyError('Invalid compression scheme.')
 
 
 class AudioData:

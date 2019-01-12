@@ -43,7 +43,7 @@ def compress_command(input_file, output_file):
     if output_file is None:
         output_file = get_output_handle(filename, 'anmf')
 
-    compress(input_file, output_file, filetype, 'anmf')
+    compress(input_file, output_file, filetype, 'anmf')  # TODO get extension automatically
 
     input_file.close()
     output_file.close()
@@ -57,7 +57,7 @@ def decompress_command(input_file, output_file, filetype):
     if output_file is None:
         output_file = get_output_handle(input_file.name, filetype)
 
-    decompress(input_file, output_file, 'anmf', filetype)
+    decompress(input_file, output_file, 'anmf', filetype)  # TODO get extension automatically
 
     input_file.close()
     output_file.close()
@@ -68,7 +68,5 @@ def decompress_command(input_file, output_file, filetype):
 def debug_command(input_file):
     with open('debug.anmf', 'wb') as anmf_file:
         compress(input_file, anmf_file, 'wav', 'anmf')
-        # compress(input_file, anmf_file, 'wav', 'anmfr')
     with open('debug.anmf', 'rb') as anmf_file, open('debug.wav', 'wb') as wav_file:
         decompress(anmf_file, wav_file, 'anmf', 'wav')
-        # decompress(anmf_file, wav_file, 'anmfr', 'wav')
