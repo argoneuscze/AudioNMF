@@ -18,6 +18,12 @@ def deserialize_matrix(fd):
     return matrix
 
 
+def array_pad(ary, n):
+    padding = (-len(ary)) % n
+    new_ary = numpy.pad(ary, (0, padding), mode='constant', constant_values=0)
+    return new_ary, padding
+
+
 def array_pad_split(ary, n):
     padding = (-len(ary)) % n
     new_ary = numpy.pad(ary, (0, padding), mode='constant', constant_values=0)
