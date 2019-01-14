@@ -14,7 +14,7 @@ setuptools.setup(
     install_requires=[
         "click",
         "numpy",
-        "scipy",
+        "scipy>=1.2.0",
         'nimfa'
     ],
 
