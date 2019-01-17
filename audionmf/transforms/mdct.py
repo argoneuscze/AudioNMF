@@ -23,7 +23,7 @@ def mdct_fast(mdct_ary):
     # run DCT-IV on this array of size N, producing effectively MDCT of size 2N
     dct4 = fftpack.dct(dct_input, type=4, norm='ortho')
 
-    return dct4
+    return dct4  # TODO fix constant
 
 
 def imdct_fast(mdct_ary):
