@@ -1,15 +1,33 @@
 import numpy
+from scipy import fftpack
 
 from audionmf.util.matrix_util import array_pad
 
 
-def mdct_fast(signal):
-    """ Turns 2N inputs into N outputs using MDCT via a modified DCT-IV. """
-    ...
+def mdct_fast(mdct_ary):
+    """ Turns 2N inputs into N outputs using MDCT via a DCT-IV. """
+
+    # split into fourths
+    block_size = mdct_ary.size // 4
+
+    # create blocks for MDCT
+    # the MDCT of 2N inputs (a, b, c, d) is exactly equivalent to a DCT-IV of the N inputs: (−cR−d, a−bR)
+    a = mdct_ary[:block_size]
+    bR = mdct_ary[block_size:2 * block_size][::-1]
+    cR = mdct_ary[2 * block_size:3 * block_size][::-1]
+    d = mdct_ary[3 * block_size:4 * block_size]
+
+    # fill input array
+    dct_input = numpy.concatenate((-cR - d, a - bR))
+
+    # run DCT-IV on this array of size N, producing effectively MDCT of size 2N
+    dct4 = fftpack.dct(dct_input, type=4, norm='ortho')
+
+    return dct4
 
 
 def imdct_fast(mdct_ary):
-    """ Turns N inputs into 2N outputs using MDCT via a modified DCT-IV. """
+    """ Turns N inputs into 2N outputs using MDCT via a DCT-IV. """
     ...
 
 
