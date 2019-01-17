@@ -1,0 +1,6 @@
+def mdct(signal):
+    ...
+
+
+def imdct(mdct):
+    ...

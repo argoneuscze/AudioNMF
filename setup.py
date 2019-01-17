@@ -6,7 +6,7 @@ setuptools.setup(
     author_email="argoneuscze@gmail.com",
     description="A tool used for compressing audio using NMF.",
 
-    long_description=open('README').read(),
+    long_description=open('README.md').read(),
     version='0.0.1',
     packages=setuptools.find_packages(),
     license='MIT',
@@ -17,6 +17,10 @@ setuptools.setup(
         "scipy>=1.2.0",
         'nimfa'
     ],
+
+    setup_requires=["pytest-runner"],
+
+    tests_require=["pytest"],
 
     entry_points={
         'console_scripts': [

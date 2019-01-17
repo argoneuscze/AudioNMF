@@ -2,3 +2,4 @@ click
 numpy
 scipy>=1.2.0
 nimfa
+pytest
