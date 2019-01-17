@@ -5,7 +5,7 @@ import nimfa
 import numpy
 
 from audionmf.audio.channel import Channel
-from audionmf.nmfcompression.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix, array_to_fft, \
+from audionmf.util.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix, array_to_fft, \
     fft_to_array, increment_by_min
 
 

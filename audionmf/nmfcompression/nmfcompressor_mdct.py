@@ -4,7 +4,7 @@ import numpy
 from scipy import fftpack
 
 from audionmf.audio.channel import Channel
-from audionmf.nmfcompression.matrix_util import array_pad, serialize_matrix, deserialize_matrix
+from audionmf.util.matrix_util import array_pad, serialize_matrix, deserialize_matrix
 
 
 class NMFCompressorMDCT:
