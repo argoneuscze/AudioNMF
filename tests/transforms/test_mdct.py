@@ -31,12 +31,12 @@ def test_mdct_fast():
     plot_signal(mdct_fast, "mdct_fast.png")
     plot_signal(mdct_slow, "mdct_slow.png")
 
-    print(mdct_slow)
-    print(mdct_fast)
-
     assert numpy.allclose(mdct_fast, mdct_slow)
 
     imdct_fast = imdct(mdct_fast, padding, False)
     imdct_slow = imdct(mdct_slow, padding, True)
+
+    plot_signal(imdct_fast, "imdct_fast.png")
+    plot_signal(imdct_slow, "imdct_slow.png")
 
     assert numpy.allclose(imdct_fast, imdct_slow)

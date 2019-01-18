@@ -8,14 +8,14 @@ def mdct_fast(mdct_ary):
     """ Turns 2N inputs into N outputs using MDCT via a DCT-IV. """
 
     # split into fourths
-    block_size = mdct_ary.size // 4
+    half_block_size = mdct_ary.size // 4
 
     # create blocks for MDCT
     # the MDCT of 2N inputs (a, b, c, d) is exactly equivalent to a DCT-IV of the N inputs: (−cR−d, a−bR)
-    a = mdct_ary[:block_size]
-    bR = mdct_ary[block_size:2 * block_size][::-1]
-    cR = mdct_ary[2 * block_size:3 * block_size][::-1]
-    d = mdct_ary[3 * block_size:4 * block_size]
+    a = mdct_ary[:half_block_size]
+    bR = mdct_ary[half_block_size:2 * half_block_size][::-1]
+    cR = mdct_ary[2 * half_block_size:3 * half_block_size][::-1]
+    d = mdct_ary[3 * half_block_size:4 * half_block_size]
 
     # fill input array
     dct_input = numpy.concatenate((-cR - d, a - bR))
@@ -28,7 +28,29 @@ def mdct_fast(mdct_ary):
 
 def imdct_fast(mdct_ary):
     """ Turns N inputs into 2N outputs using MDCT via a DCT-IV. """
-    ...
+
+    # get a size of fourths
+    half_block_size = mdct_ary.size // 2
+
+    # allocate output array
+    output_ary = numpy.ndarray((half_block_size * 4,))
+
+    # inverse DCT-IV, obtaining back (−cR−d, a−bR)
+    idct4 = fftpack.idct(mdct_ary, type=4)
+
+    # divide by implicit scaling factor 2N
+    idct4 /= 4 * half_block_size
+
+    # extend and shift to gain the (almost) original array - still need to overlap and add with the next block
+    abR = idct4[half_block_size:]
+    output_ary[:half_block_size] = abR
+    output_ary[half_block_size:2 * half_block_size] = -abR[::-1]
+
+    cRd = idct4[:half_block_size]
+    output_ary[2 * half_block_size:3 * half_block_size] = -cRd[::-1]
+    output_ary[3 * half_block_size:] = -cRd
+
+    return output_ary
 
 
 def mdct_slow(signal):
