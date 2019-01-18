@@ -23,7 +23,7 @@ def mdct_fast(mdct_ary):
     # run DCT-IV on this array of size N, producing effectively MDCT of size 2N
     dct4 = fftpack.dct(dct_input, type=4)
 
-    return dct4 * 0.5  # TODO fix constant
+    return dct4 * 0.5
 
 
 def imdct_fast(mdct_ary):
@@ -41,7 +41,8 @@ def imdct_fast(mdct_ary):
     # divide by implicit scaling factor 2N
     idct4 /= 4 * half_block_size
 
-    # extend and shift to gain the (almost) original array - still need to overlap and add with the next block
+    # extend and shift to gain the (almost) original array (still need overlap-and-add with the next block)
+    # IMDCT(MDCT(a, b, c, d)) = (a−bR, b−aR, c+dR, d+cR) / 2
     abR = idct4[half_block_size:]
     output_ary[:half_block_size] = abR
     output_ary[half_block_size:2 * half_block_size] = -abR[::-1]
