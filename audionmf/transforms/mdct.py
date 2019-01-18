@@ -21,9 +21,9 @@ def mdct_fast(mdct_ary):
     dct_input = numpy.concatenate((-cR - d, a - bR))
 
     # run DCT-IV on this array of size N, producing effectively MDCT of size 2N
-    dct4 = fftpack.dct(dct_input, type=4, norm='ortho')
+    dct4 = fftpack.dct(dct_input, type=4)
 
-    return dct4  # TODO fix constant
+    return dct4 * 0.5  # TODO fix constant
 
 
 def imdct_fast(mdct_ary):
@@ -76,7 +76,7 @@ def mdct(full_signal, block_size, slow=False):
     samples = numpy.pad(samples, (block_size, block_size), mode='constant', constant_values=0)
 
     # allocate MDCT output matrix
-    mdct_matrix = numpy.ndarray((len(samples) // block_size, block_size))
+    mdct_matrix = numpy.ndarray(((len(samples) // block_size) - 1, block_size))
 
     # pick the transform function R^2N -> R^N
     if not slow:
@@ -98,17 +98,18 @@ def imdct(mdct_matrix, padding, slow=False):
     # find block size
     block_size = mdct_matrix.shape[1]
 
-    # allocate IMDCT output array
-    imdct_ary = numpy.zeros(mdct_matrix.size)
+    # allocate IMDCT output array along with an extra block filler at the end
+    imdct_ary = numpy.zeros(mdct_matrix.size + block_size)
 
-    # pick the transform function R^2N -> R^N
+    # pick the transform function R^N -> R^2N
     if not slow:
         f = imdct_fast
     else:
         f = imdct_slow
 
-    # run IMDCT for each block except last one
-    for i in range(mdct_matrix.shape[0] - 1):
+    # run IMDCT for each block
+    for i in range(mdct_matrix.shape[0]):
         imdct_ary[i * block_size:i * block_size + block_size * 2] += f(mdct_matrix[i])
 
+    # remove the padding from the array and return it
     return imdct_ary[block_size:-padding - block_size]

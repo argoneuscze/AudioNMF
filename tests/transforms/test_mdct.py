@@ -8,9 +8,9 @@ def test_mdct_slow():
     x = numpy.linspace(0, 8 * numpy.pi, 1000)
     signal = [numpy.cos(y) for y in x]
 
-    # signal = numpy.concatenate((numpy.arange(4) * -1 - 1, numpy.arange(4) + 1))
+    # signal = numpy.concatenate((numpy.arange(2) * -1 - 1, numpy.arange(2) + 1))
 
-    mdct_out, padding = mdct(signal, 16, True)
+    mdct_out, padding = mdct(signal, 2, True)
     imdct_out = imdct(mdct_out, padding, True)
 
     plot_signal(signal, "signal.png")
@@ -23,7 +23,7 @@ def test_mdct_fast():
     x = numpy.linspace(0, 8 * numpy.pi, 1000)
     signal = [numpy.cos(y) for y in x]
 
-    #signal = numpy.concatenate((numpy.arange(4) * -1 - 1, numpy.arange(4) + 1))
+    # signal = numpy.concatenate((numpy.arange(4) * -1 - 1, numpy.arange(4) + 1))
 
     mdct_fast, padding = mdct(signal, 4, False)
     mdct_slow, padding = mdct(signal, 4, True)
