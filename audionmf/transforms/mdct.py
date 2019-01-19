@@ -1,6 +1,7 @@
 import numpy
 from scipy import fftpack
 
+from audionmf.transforms.window_func import mdct_window_mp3
 from audionmf.util.matrix_util import array_pad
 
 
@@ -107,9 +108,17 @@ def mdct(full_signal, block_size, slow=False):
     else:
         f = mdct_slow
 
+    # get the window function
+    window = mdct_window_mp3(block_size)
+
     # run MDCT for each block except the last one
     for i in range((len(samples) // block_size) - 1):
-        mdct_ary = f(samples[i * block_size:i * block_size + block_size * 2])
+        signal = samples[i * block_size:i * block_size + block_size * 2]
+
+        # window the signal
+        signal = window * signal
+
+        mdct_ary = f(signal)
         mdct_matrix[i] = mdct_ary
 
     return mdct_matrix, padding
@@ -130,9 +139,17 @@ def imdct(mdct_matrix, padding, slow=False):
     else:
         f = imdct_slow
 
+    # get the window function
+    window = mdct_window_mp3(block_size)
+
     # run IMDCT for each block
     for i in range(mdct_matrix.shape[0]):
-        imdct_ary[i * block_size:i * block_size + block_size * 2] += f(mdct_matrix[i])
+        signal = f(mdct_matrix[i])
+
+        # window the signal and multiply by two to gain original amplitudes
+        signal = window * signal * 2
+
+        imdct_ary[i * block_size:i * block_size + block_size * 2] += signal
 
     # remove the padding from the array and return it
     return imdct_ary[block_size:-padding - block_size]

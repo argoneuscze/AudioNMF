@@ -1,10 +1,10 @@
 import struct
 
 import numpy
-from scipy import fftpack
 
 from audionmf.audio.channel import Channel
-from audionmf.util.matrix_util import array_pad, serialize_matrix, deserialize_matrix
+from audionmf.transforms.mdct import mdct, imdct
+from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix
 
 
 class NMFCompressorMDCT:
@@ -26,41 +26,19 @@ class NMFCompressorMDCT:
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
-        for channel in audio_data.channels:
-            # pad samples properly to 2x frame size
-            samples, padding = array_pad(channel.samples, self.FRAME_SIZE * 2)
-
-            # MDCT
-            # allocate MDCT output matrix
-            mdct = numpy.ndarray((len(samples) // self.FRAME_SIZE, self.FRAME_SIZE))
-
-            # size of one input block, equal to N // 2
-            block_size = self.FRAME_SIZE // 2
-            for i in range(len(samples) // self.FRAME_SIZE - 1):
-                # where the current frame starts
-                frame_start = i * self.FRAME_SIZE
-
-                # create blocks for MDCT
-                # the MDCT of 2N inputs (a, b, c, d) is exactly equivalent to a DCT-IV of the N inputs: (−cR−d, a−bR)
-                a = samples[frame_start:frame_start + block_size]
-                bR = samples[frame_start + block_size:frame_start + 2 * block_size][::-1]
-                cR = samples[frame_start + 2 * block_size:frame_start + 3 * block_size][::-1]
-                d = samples[frame_start + 3 * block_size:frame_start + 4 * block_size]
-
-                # fill input array
-                dct_input = numpy.concatenate((-cR - d, a - bR))
-
-                # run DCT-IV on this array of size N, producing effectively MDCT of size 2N
-                dct4 = fftpack.dct(dct_input, type=4)
-
-                # emplace the resulting MDCT in the output matrix
-                mdct[i] = dct4
+        for i, channel in enumerate(audio_data.channels):
+            # find the resulting MDCT for the entire signal
+            mdct_matrix, padding = mdct(channel.samples, self.FRAME_SIZE // 2)
 
             # write padding
             f.write(struct.pack('<I', padding))
 
             # write the MDCT matrix to file
-            serialize_matrix(f, mdct)
+            serialize_matrix(f, mdct_matrix)
+
+            # debug stuff
+            # plot_signal(channel.samples[:self.FRAME_SIZE // 2], 'dbg_c{}_1_signal.png'.format(i))
+            # plot_signal(mdct_matrix[2], 'dbg_c{}_2_mdct.png'.format(i))
 
             # TODO NMF
             # TODO filter bank?
@@ -75,14 +53,21 @@ class NMFCompressorMDCT:
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))
         audio_data.sample_rate = sample_rate
 
-        for _ in range(channel_count):
+        for i in range(channel_count):
             channel = Channel()
 
             # read padding
             padding = struct.unpack('<I', f.read(4))[0]
 
             # read MDCT matrix
-            mdct = deserialize_matrix(f)
+            mdct_matrix = deserialize_matrix(f)
 
             # invert MDCT
-            # TODO
+            signal = imdct(mdct_matrix, padding)
+
+            # convert back to 16-bit signed
+            signal = signal.astype(numpy.int16)
+
+            # add samples to channel and finalize
+            channel.add_sample_array(signal)
+            audio_data.add_channel(channel)
