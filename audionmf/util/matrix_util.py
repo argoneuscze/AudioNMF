@@ -48,6 +48,15 @@ def array_to_positive_matrix(ary):
     return final_matrix, padding
 
 
+def matrix_split(matrix, N):
+    """ Splits an X*Y matrix into X // N chunks sized N*Y without any padding at the end. """
+    submatrices = list()
+    for i in range((matrix.shape[0] // N) + 1):
+        submatrix = matrix[i * N:i * N + N]
+        submatrices.append(submatrix)
+    return submatrices
+
+
 def array_to_fft(array):
     # runs RFFT on an array and returns the real and imaginary arrays separately
     fft = numpy.fft.rfft(array)

@@ -1,10 +1,12 @@
 import struct
 
+import nimfa
 import numpy
 
 from audionmf.audio.channel import Channel
 from audionmf.transforms.mdct import mdct, imdct
-from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix
+from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix, increment_by_min, matrix_split
+from audionmf.util.plot_util import plot_signal
 
 
 class NMFCompressorMDCT:
@@ -14,11 +16,11 @@ class NMFCompressorMDCT:
 
     # how many frames to put together in a matrix
     # e.g. 1152 // 2 = 576 subbands (bins), NMF_CHUNK_SIZE = 200 => 200x576 matrix as input to NMF
-    NMF_CHUNK_SIZE = 100
+    NMF_CHUNK_SIZE = 50
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 100
-    NMF_RANK = 30
+    NMF_MAX_ITER = 500
+    NMF_RANK = 40
 
     def compress(self, audio_data, f):
         print('Compressing...')
@@ -30,19 +32,38 @@ class NMFCompressorMDCT:
             # find the resulting MDCT for the entire signal
             mdct_matrix, padding = mdct(channel.samples, self.FRAME_SIZE // 2)
 
+            print(mdct_matrix)
+
             # write padding
             f.write(struct.pack('<I', padding))
 
-            # write the MDCT matrix to file
-            serialize_matrix(f, mdct_matrix)
+            # increment the MDCT matrix to make sure it's positive
+            mdct_matrix_inc, min_val = increment_by_min(mdct_matrix)
+
+            # write minimum value to be subtracted later
+            f.write(struct.pack('<d', min_val))
+
+            # split the matrix into chunks
+            submatrices = matrix_split(mdct_matrix_inc, self.NMF_CHUNK_SIZE)
+
+            # write the chunk count into the file
+            f.write(struct.pack('<I', len(submatrices)))
+
+            # run NMF on the MDCT matrices, getting their weights and coefficients
+            for submatrix in submatrices:
+                nmf = nimfa.Nmf(submatrix, max_iter=self.NMF_MAX_ITER, rank=self.NMF_RANK,
+                                objective='fro', update='euclidean')()
+
+                W = nmf.basis()
+                H = nmf.coef()
+
+                # write both matrices into the file
+                serialize_matrix(f, W)
+                serialize_matrix(f, H)
 
             # debug stuff
-            # plot_signal(channel.samples[:self.FRAME_SIZE // 2], 'dbg_c{}_1_signal.png'.format(i))
+            plot_signal(channel.samples[:self.FRAME_SIZE // 2], 'dbg_c{}_1_signal.png'.format(i))
             # plot_signal(mdct_matrix[2], 'dbg_c{}_2_mdct.png'.format(i))
-
-            # TODO NMF
-            # TODO filter bank?
-            # TODO windowing?
 
     def decompress(self, f, audio_data):
         print('Decompressing...')
@@ -59,8 +80,28 @@ class NMFCompressorMDCT:
             # read padding
             padding = struct.unpack('<I', f.read(4))[0]
 
-            # read MDCT matrix
-            mdct_matrix = deserialize_matrix(f)
+            # read minimum value
+            min_val = struct.unpack('<d', f.read(8))[0]
+
+            # read chunk count
+            chunk_count = struct.unpack('<I', f.read(4))[0]
+
+            # read and multiply NMF chunks
+            chunks = list()
+
+            for _ in range(chunk_count):
+                # read both NMF matrices
+                W = deserialize_matrix(f)
+                H = deserialize_matrix(f)
+
+                # get the original matrix
+                mdct_matrix = numpy.matmul(W, H) - min_val
+
+                # add it to the chunk list to be re-joined
+                chunks.append(mdct_matrix)
+
+            # re-join the submatrices
+            mdct_matrix = numpy.concatenate(chunks)
 
             # invert MDCT
             signal = imdct(mdct_matrix, padding)
@@ -71,3 +112,6 @@ class NMFCompressorMDCT:
             # add samples to channel and finalize
             channel.add_sample_array(signal)
             audio_data.add_channel(channel)
+
+            # debug stuff
+            plot_signal(signal[:self.FRAME_SIZE // 2], 'dbg_c{}_2_signal.png'.format(i))
