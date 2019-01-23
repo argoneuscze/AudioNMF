@@ -9,8 +9,9 @@ The text part is visible [**here**](https://github.com/argoneuscze/thesis).
 * Experiment with different chunk sizes / data types
 * Tinker with Nimfa NMF settings
 * Learn about CELT/SILK
-* Use MDCT instead of FFT and make sure to use KBD windowing
 * Look into [GstPEAQ](https://github.com/HSU-ANT/gstpeaq) for measuring audio quality
+* Use STFT with windowing
+
 
 ## Notes
 
@@ -26,3 +27,4 @@ The text part is visible [**here**](https://github.com/argoneuscze/thesis).
   * Tried using FFT, but applying NMF to the frequency domain seems to cause
     way too much distortion
     * Possible error in implementation?
+  * MDCT doesn't seem applicable to spectral analysis, lossy compression of MDCT data leads to large aliasing

@@ -16,7 +16,7 @@ class NMFCompressorMDCT:
 
     # how many frames to put together in a matrix
     # e.g. 1152 // 2 = 576 subbands (bins), NMF_CHUNK_SIZE = 200 => 200x576 matrix as input to NMF
-    NMF_CHUNK_SIZE = 50
+    NMF_CHUNK_SIZE = 500
 
     # how many iterations and target rank of NMF
     NMF_MAX_ITER = 500
@@ -52,7 +52,7 @@ class NMFCompressorMDCT:
             # run NMF on the MDCT matrices, getting their weights and coefficients
             for submatrix in submatrices:
                 nmf = nimfa.Nmf(submatrix, max_iter=self.NMF_MAX_ITER, rank=self.NMF_RANK,
-                                objective='fro', update='euclidean')()
+                                objective='div', update='divergence')()
 
                 W = nmf.basis()
                 H = nmf.coef()
@@ -63,7 +63,7 @@ class NMFCompressorMDCT:
 
             # debug stuff
             plot_signal(channel.samples[:self.FRAME_SIZE // 2], 'dbg_c{}_1_signal.png'.format(i))
-            # plot_signal(mdct_matrix[2], 'dbg_c{}_2_mdct.png'.format(i))
+            plot_signal(mdct_matrix[2], 'dbg_c{}_2_mdct.png'.format(i))
 
     def decompress(self, f, audio_data):
         print('Decompressing...')
