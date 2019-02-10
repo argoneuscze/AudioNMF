@@ -15,11 +15,11 @@ class NMFCompressorSTFT:
 
     # how many frames to put together in a matrix
     # e.g. (1152 // 2) + 1 = 577 subbands (bins), NMF_CHUNK_SIZE = 200 => 577x200 matrix as input to NMF
-    NMF_CHUNK_SIZE = 100
+    NMF_CHUNK_SIZE = 500
 
     # how many iterations and target rank of NMF
     NMF_MAX_ITER = 200
-    NMF_RANK = 50
+    NMF_RANK = 30
 
     def compress(self, audio_data, f):
         print('Compressing...')
