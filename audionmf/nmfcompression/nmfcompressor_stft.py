@@ -32,36 +32,34 @@ class NMFCompressorSTFT:
 
             # debug
             freq = numpy.absolute(stft[:, 200])[:100]
-            plot_signal(freq, "dbg_signal_1.png")
+            plot_signal(freq, "dbg_signal_1a.png")
 
             # transpose for consistency with other methods
             stft = numpy.transpose(stft)
 
-            # split the matrix into chunks
-            submatrices = matrix_split(stft, self.NMF_CHUNK_SIZE)
+            # find phase and magnitude matrices
+            phases = numpy.angle(stft)
+            magnitudes = numpy.absolute(stft)
+
+            # serialize the phases matrix
+            serialize_matrix(f, phases)
+
+            # split the magnitude matrix into chunks
+            submatrices = matrix_split(magnitudes, self.NMF_CHUNK_SIZE)
 
             # write the chunk count into the file
             f.write(struct.pack('<I', len(submatrices)))
 
-            # run NMF on the FFT matrices, getting their weights and coefficients
+            # run NMF on the magnitude submatrices, getting their weights and coefficients
             for submatrix in submatrices:
-                # split real and imaginary part
-                sub_r = submatrix.real
-                sub_i = submatrix.imag
-
-                # run NMF
-                W_r, H_r, min_r = nmf_matrix(sub_r, self.NMF_MAX_ITER, self.NMF_RANK)
-                W_i, H_i, min_i = nmf_matrix(sub_i, self.NMF_MAX_ITER, self.NMF_RANK)
+                W, H, min_val = nmf_matrix(submatrix, self.NMF_MAX_ITER, self.NMF_RANK)
 
                 # write minimum value to be subtracted later
-                f.write(struct.pack('<dd', min_r, min_i))
+                f.write(struct.pack('<d', min_val))
 
                 # write matrices to file
-                serialize_matrix(f, W_r)
-                serialize_matrix(f, H_r)
-
-                serialize_matrix(f, W_i)
-                serialize_matrix(f, H_i)
+                serialize_matrix(f, W)
+                serialize_matrix(f, H)
 
     def decompress(self, f, audio_data):
         print('Decompressing...')
@@ -75,6 +73,9 @@ class NMFCompressorSTFT:
         for i in range(channel_count):
             channel = Channel()
 
+            # read phases matrix
+            phases = deserialize_matrix(f)
+
             # read chunk count
             chunk_count = struct.unpack('<I', f.read(4))[0]
 
@@ -82,26 +83,24 @@ class NMFCompressorSTFT:
             chunks = list()
 
             for _ in range(chunk_count):
-                # read minimum values
-                min_r, min_i = struct.unpack('<dd', f.read(16))
+                # read minimum value
+                min_val = struct.unpack('<d', f.read(8))
 
-                # read NMF matrices
-                W_r = deserialize_matrix(f)
-                H_r = deserialize_matrix(f)
-
-                W_i = deserialize_matrix(f)
-                H_i = deserialize_matrix(f)
+                # read NMF magnitude matrices
+                W = deserialize_matrix(f)
+                H = deserialize_matrix(f)
 
                 # get original chunk back
-                stft_chunk_r = nmf_matrix_original(W_r, H_r, min_r)
-                stft_chunk_i = nmf_matrix_original(W_i, H_i, min_i)
-                stft_chunk = stft_chunk_r + 1j * stft_chunk_i
+                mag_chunk = nmf_matrix_original(W, H, min_val)
 
                 # append it to the list
-                chunks.append(stft_chunk)
+                chunks.append(mag_chunk)
 
-            # concatenate STFT chunks
-            stft = numpy.concatenate(chunks)
+            # concatenate magnitude matrix chunks
+            magnitudes = numpy.concatenate(chunks)
+
+            # join matrices back into the original STFT matrix
+            stft = magnitudes * numpy.cos(phases) + 1j * magnitudes * numpy.sin(phases)
 
             # transpose back into original form
             stft = numpy.transpose(stft)
@@ -118,4 +117,4 @@ class NMFCompressorSTFT:
 
             # debug
             freq = numpy.absolute(stft[:, 200])[:100]
-            plot_signal(freq, "dbg_signal_2.png")
+            plot_signal(freq, "dbg_signal_2a.png")
