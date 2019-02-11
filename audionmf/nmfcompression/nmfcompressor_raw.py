@@ -53,7 +53,7 @@ class NMFCompressorRaw:
         # temp_c.add_sample_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
         # audio_data.channels = [temp_c]
 
-        print('Compressing...')
+        print('Compressing (RAW)...')
 
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
@@ -102,7 +102,7 @@ class NMFCompressorRaw:
     def decompress(self, input_fd, audio_data):
         f = input_fd
 
-        print('Decompressing...')
+        print('Decompressing (RAW)...')
 
         data = f.read(4)
         if data != b'ANMF':

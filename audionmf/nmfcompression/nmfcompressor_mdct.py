@@ -23,7 +23,7 @@ class NMFCompressorMDCT:
     NMF_RANK = 40
 
     def compress(self, audio_data, f):
-        print('Compressing...')
+        print('Compressing (MDCT)...')
 
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
@@ -31,8 +31,6 @@ class NMFCompressorMDCT:
         for i, channel in enumerate(audio_data.channels):
             # find the resulting MDCT for the entire signal
             mdct_matrix, padding = mdct(channel.samples, self.FRAME_SIZE // 2)
-
-            print(mdct_matrix)
 
             # write padding
             f.write(struct.pack('<I', padding))
@@ -66,7 +64,7 @@ class NMFCompressorMDCT:
             plot_signal(mdct_matrix[2], 'dbg_c{}_2_mdct.png'.format(i))
 
     def decompress(self, f, audio_data):
-        print('Decompressing...')
+        print('Decompressing (MDCT)...')
 
         data = f.read(4)
         if data != b'ANMF':

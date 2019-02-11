@@ -9,7 +9,7 @@ audio_formats = {
 }
 
 compression_schemes = {
-    'anmf': NMFCompressorSTFT,
+    'anmfs': NMFCompressorSTFT,
     'anmfr': NMFCompressorRaw,
     'anmff': NMFCompressorFFT,
     'anmfm': NMFCompressorMDCT

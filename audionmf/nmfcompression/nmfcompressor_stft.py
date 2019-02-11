@@ -22,7 +22,7 @@ class NMFCompressorSTFT:
     NMF_RANK = 30
 
     def compress(self, audio_data, f):
-        print('Compressing...')
+        print('Compressing (STFT)...')
 
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
@@ -62,7 +62,7 @@ class NMFCompressorSTFT:
                 serialize_matrix(f, H)
 
     def decompress(self, f, audio_data):
-        print('Decompressing...')
+        print('Decompressing (STFT)...')
 
         data = f.read(4)
         if data != b'ANMF':

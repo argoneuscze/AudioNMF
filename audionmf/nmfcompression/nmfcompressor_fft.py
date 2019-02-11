@@ -53,20 +53,12 @@ class NMFCompressorFFT:
     def compress(self, audio_data, output_fd):
         f = output_fd
 
-        # debug
-        temp_c = Channel()
-        n = 4000  # sample size
-        temp_c.add_sample_array([(x - (n // 2)) * 16 for x in range(n)])
-        audio_data.channels = [temp_c]
-
-        print('Compressing...')
+        print('Compressing (FFT)...')
 
         f.write(b'ANMF')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
         for channel in audio_data.channels:
-            print(channel.samples)
-
             # split samples into equal parts
             samples, padding = array_pad_split(channel.samples, self.FFT_SIZE)
 
@@ -127,7 +119,7 @@ class NMFCompressorFFT:
     def decompress(self, input_fd, audio_data):
         f = input_fd
 
-        print('Decompressing...')
+        print('Decompressing (FFT)...')
 
         data = f.read(4)
         if data != b'ANMF':
@@ -173,8 +165,6 @@ class NMFCompressorFFT:
 
             # remove padding and convert back to 16-bit signed integers
             samples = samples[:-padding].astype(numpy.int16)
-
-            print(samples)
 
             # add samples to channel
             channel.add_sample_array(samples)

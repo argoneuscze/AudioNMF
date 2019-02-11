@@ -93,8 +93,8 @@ venv.bak/
 *.anmf
 *.wav
 !examples/**/*.wav
-!examples/**/*.anmf
 
 # Debug files
 tests/**/*.png
 dbg_*
+debug/
