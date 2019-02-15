@@ -50,6 +50,9 @@ def array_to_positive_matrix(ary):
 
 def matrix_split(matrix, N):
     """ Splits an X*Y matrix into X // N chunks sized N*Y without any padding at the end. """
+    # if N is None, return the original matrix as one chunk
+    if N is None:
+        return [matrix]
     submatrices = list()
     for i in range((matrix.shape[0] // N) + 1):
         submatrix = matrix[i * N:i * N + N]

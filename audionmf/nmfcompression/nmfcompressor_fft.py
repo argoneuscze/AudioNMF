@@ -1,4 +1,3 @@
-import math
 import struct
 
 import nimfa
@@ -6,7 +5,7 @@ import numpy
 
 from audionmf.audio.channel import Channel
 from audionmf.util.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix, array_to_fft, \
-    fft_to_array, increment_by_min
+    fft_to_array, increment_by_min, matrix_split
 
 
 class NMFCompressorFFT:
@@ -44,7 +43,7 @@ class NMFCompressorFFT:
     # how many chunks of FFT to group up together
     # e.g. 576 bins, ARRAY_SIZE = 200 => 200x576 before NMF
     # if set to None it will process all the chunks at once
-    ARRAY_SIZE = 100
+    ARRAY_SIZE = 200
 
     # how many iterations and target rank of NMF
     NMF_MAX_ITER = 400
@@ -71,28 +70,9 @@ class NMFCompressorFFT:
                 matrix_r[i], matrix_c[i] = array_to_fft(sample_part)
 
             # build two sets of smaller matrices - one with real coefficients and one with complex
-            matrices_real = list()
-            matrices_imag = list()
-
-            # split matrices into smaller chunks
-            if self.ARRAY_SIZE is None:
-                # if we're using one large chunk
-                matrices_real.append(matrix_r)
-                matrices_imag.append(matrix_c)
-            else:
-                # find actual chunk size
-                chunk_size = len(samples)
-                if self.ARRAY_SIZE is not None:
-                    if self.ARRAY_SIZE < chunk_size:
-                        chunk_size = self.ARRAY_SIZE
-
-                # split into submatrices
-                for i in range(int(math.ceil(len(samples) / chunk_size))):
-                    submatrix_r = matrix_r[i * chunk_size:i * chunk_size + chunk_size]
-                    submatrix_c = matrix_c[i * chunk_size:i * chunk_size + chunk_size]
-
-                    matrices_real.append(submatrix_r)
-                    matrices_imag.append(submatrix_c)
+            # and split them into chunks
+            matrices_real = matrix_split(matrix_r, self.ARRAY_SIZE)
+            matrices_imag = matrix_split(matrix_c, self.ARRAY_SIZE)
 
             # write padding of samples after decompression and the amount of matrices / 4
             # (there's imaginary and real matrices, we only write down the count of the real ones,
