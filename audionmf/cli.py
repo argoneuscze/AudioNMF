@@ -89,7 +89,7 @@ def debug_command():
         schemes = compression_schemes.keys()
 
         # debug
-        # schemes = ['anmfr']
+        # schemes = ['anmfs']
 
         for scheme in schemes:
             comp_path = '{}_com.{}'.format(filename, scheme)

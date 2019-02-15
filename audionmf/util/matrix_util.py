@@ -4,16 +4,18 @@ import struct
 import numpy
 
 
-def serialize_matrix(fd, matrix):
+def serialize_matrix(fd, matrix, dtype='f'):
+    dt = numpy.dtype(dtype)
+    matrix = matrix.astype(dt)
     fd.write(struct.pack('<II', matrix.shape[0], matrix.shape[1]))
-    fd.write(struct.pack('<' + 'd' * matrix.size, *matrix.flat))
+    fd.write(struct.pack('<' + dtype * matrix.size, *matrix.flat))
 
 
-def deserialize_matrix(fd):
-    dt = numpy.dtype(numpy.float64)
+def deserialize_matrix(fd, dtype='f'):
+    dt = numpy.dtype(dtype)
     dt = dt.newbyteorder('<')
     rows, cols = struct.unpack('<II', fd.read(8))
-    matrix = numpy.frombuffer(fd.read(rows * cols * 8), dtype=dt)
+    matrix = numpy.frombuffer(fd.read(rows * cols * dt.itemsize), dtype=dt)
     matrix = numpy.reshape(matrix, newshape=(rows, cols))
     return matrix
 
