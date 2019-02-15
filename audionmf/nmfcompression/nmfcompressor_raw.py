@@ -1,11 +1,11 @@
 import math
 import struct
 
-import nimfa
 import numpy
 
 from audionmf.audio.channel import Channel
-from audionmf.util.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix, increment_by_min
+from audionmf.util.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix
+from audionmf.util.nmf_util import nmf_matrix
 
 
 class NMFCompressorRaw:
@@ -85,15 +85,11 @@ class NMFCompressorRaw:
 
             # process all the matrices, real ones first
             for matrix in matrix_list:
-                matrix, min_val = increment_by_min(matrix)
+                # run NMF on the matrix
+                W, H, min_val = nmf_matrix(matrix, self.NMF_MAX_ITER, self.NMF_RANK)
 
                 # write minimum value to be subtracted later
                 f.write(struct.pack('<d', min_val))
-
-                # run NMF on the matrix, getting its weights and coefficients
-                nmf = nimfa.Nmf(matrix, max_iter=self.NMF_MAX_ITER, rank=self.NMF_RANK)()
-                W = nmf.basis()
-                H = nmf.coef()
 
                 # write both matrices into the file
                 serialize_matrix(f, W)

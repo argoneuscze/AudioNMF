@@ -6,7 +6,6 @@ import scipy.signal
 from audionmf.audio.channel import Channel
 from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix, matrix_split
 from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
-from audionmf.util.plot_util import plot_signal
 
 
 class NMFCompressorSTFT:
@@ -30,10 +29,6 @@ class NMFCompressorSTFT:
         for i, channel in enumerate(audio_data.channels):
             stft = scipy.signal.stft(channel.samples, nperseg=self.FRAME_SIZE, padded=True)[2]
 
-            # debug
-            freq = numpy.absolute(stft[:, 200])[:100]
-            plot_signal(freq, "dbg_signal_1a.png")
-
             # transpose for consistency with other methods
             stft = numpy.transpose(stft)
 
@@ -52,6 +47,7 @@ class NMFCompressorSTFT:
 
             # run NMF on the magnitude submatrices, getting their weights and coefficients
             for submatrix in submatrices:
+                # run NMF on the matrix
                 W, H, min_val = nmf_matrix(submatrix, self.NMF_MAX_ITER, self.NMF_RANK)
 
                 # write minimum value to be subtracted later
@@ -114,7 +110,3 @@ class NMFCompressorSTFT:
             # add samples to channel and finalize
             channel.add_sample_array(signal)
             audio_data.add_channel(channel)
-
-            # debug
-            freq = numpy.absolute(stft[:, 200])[:100]
-            plot_signal(freq, "dbg_signal_2a.png")
