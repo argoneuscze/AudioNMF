@@ -10,6 +10,7 @@ from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
 class NMFCompressorSTFT:
     # amount of samples per frame, must be even
+    # 1152 frame size at 44100 sample rate corresponds to ~26 ms windows
     FRAME_SIZE = 1152
 
     # how many frames to put together in a matrix
@@ -27,7 +28,8 @@ class NMFCompressorSTFT:
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
         for i, channel in enumerate(audio_data.channels):
-            stft = scipy.signal.stft(channel.samples, nperseg=self.FRAME_SIZE, padded=True)[2]
+            stft = scipy.signal.stft(channel.samples, fs=audio_data.sample_rate, window='hann',
+                                     noverlap=self.FRAME_SIZE // 2, nperseg=self.FRAME_SIZE, padded=True)[2]
 
             # transpose for consistency with other methods
             stft = numpy.transpose(stft)
@@ -102,7 +104,8 @@ class NMFCompressorSTFT:
             stft = numpy.transpose(stft)
 
             # run inverse STFT
-            signal = scipy.signal.istft(stft, nperseg=self.FRAME_SIZE)[1]
+            signal = scipy.signal.istft(stft, fs=audio_data.sample_rate, window='hann',
+                                        noverlap=self.FRAME_SIZE // 2, nperseg=self.FRAME_SIZE, )[1]
 
             # convert back to 16-bit signed
             signal = signal.astype(numpy.int16)
