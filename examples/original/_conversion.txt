@@ -1,0 +1,15 @@
+These samples have been converted using sox with the following parameters
+
+16 bits per sample (signed)
+
+# sox <input> -b 16 <output>
+
+most samples are trimmed to ~10 seconds, in which case the following is used
+
+# sox <input> -b 16 <output> trim <start> <duration>
+
+===
+
+Some of the original examples are in .mp3 and are first converted to .wav using LAME
+
+# lame --decode <input>
