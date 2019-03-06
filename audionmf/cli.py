@@ -2,7 +2,7 @@ import os
 
 import click as click
 
-from audionmf.audio.audio_data import AudioData, compression_schemes
+from audionmf.audio.audio_data import AudioData
 from audionmf.util.plot_util import plot_signal
 
 
@@ -86,10 +86,10 @@ def debug_command():
         sample_signal_in = audio.channels[0].samples
         plot_signal(sample_signal_in, os.path.join(debug_path, '{}_sig_in.png'.format(filename)))
 
-        schemes = compression_schemes.keys()
+        # schemes = compression_schemes.keys()
 
-        # debug
-        # schemes = ['anmfs']
+        # debug STFT
+        schemes = ['anmfs']
 
         for scheme in schemes:
             comp_path = '{}_com.{}'.format(filename, scheme)

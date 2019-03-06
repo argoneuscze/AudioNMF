@@ -4,6 +4,7 @@ import numpy
 import scipy.signal
 
 from audionmf.audio.channel import Channel
+from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand
 from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix, matrix_split
 from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
@@ -55,9 +56,25 @@ class NMFCompressorSTFT:
                 # write minimum value to be subtracted later
                 f.write(struct.pack('<d', min_val))
 
+                # scale values to [0,1] using the maximum range of both matrices
+                matrix_min = min(numpy.amin(W), numpy.amin(H))
+                matrix_max = max(numpy.amax(W), numpy.amax(H))
+
+                Ws = scale_val(W, matrix_min, matrix_max, 0, 1)
+                Hs = scale_val(H, matrix_min, matrix_max, 0, 1)
+
+                # compand the scaled matrices using mu-law
+                compand = numpy.vectorize(mu_law_compand)
+
+                Wsc = compand(Ws, 10 ** 4)
+                Hsc = compand(Hs, 10 ** 5)
+
+                # write the min and max to be re-scaled later
+                f.write(struct.pack('<dd', matrix_min, matrix_max))
+
                 # write matrices to file
-                serialize_matrix(f, W)
-                serialize_matrix(f, H)
+                serialize_matrix(f, Wsc)
+                serialize_matrix(f, Hsc)
 
     def decompress(self, f, audio_data):
         print('Decompressing (STFT)...')
@@ -84,9 +101,22 @@ class NMFCompressorSTFT:
                 # read minimum value
                 min_val = struct.unpack('<d', f.read(8))
 
-                # read NMF magnitude matrices
-                W = deserialize_matrix(f)
-                H = deserialize_matrix(f)
+                # read min and max for re-scaling
+                matrix_min, matrix_max = struct.unpack('<dd', f.read(16))
+
+                # read scaled NMF magnitude matrices
+                Wsc = deserialize_matrix(f)
+                Hsc = deserialize_matrix(f)
+
+                # expand the scaled matrices using mu-law
+                expand = numpy.vectorize(mu_law_expand)
+
+                Ws = expand(Wsc, 10 ** 4)
+                Hs = expand(Hsc, 10 ** 5)
+
+                # scale matrices back to normal
+                W = scale_val(Ws, 0, 1, matrix_min, matrix_max)
+                H = scale_val(Hs, 0, 1, matrix_min, matrix_max)
 
                 # get original chunk back
                 mag_chunk = nmf_matrix_original(W, H, min_val)
