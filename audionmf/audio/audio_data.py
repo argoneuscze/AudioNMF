@@ -20,14 +20,16 @@ def get_audio_format(string):
     try:
         return audio_formats[string]()
     except KeyError:
-        raise KeyError('Invalid audio format.')
+        print('Invalid audio format: {}.'.format(string))
+        exit(1)
 
 
 def get_compression_format(string):
     try:
         return compression_schemes[string]()
     except KeyError:
-        raise KeyError('Invalid compression scheme.')
+        print('Invalid compression scheme: {}.'.format(string))
+        exit(2)
 
 
 class AudioData:
