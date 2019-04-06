@@ -4,7 +4,7 @@ import numpy
 import scipy.signal
 
 from audionmf.audio.channel import Channel
-from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand
+from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand, init_unif_quant
 from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix, matrix_split
 from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
@@ -68,6 +68,19 @@ class NMFCompressorSTFT:
 
                 Wsc = compand(Ws, 10 ** 4)
                 Hsc = compand(Hs, 10 ** 5)
+
+                # uniformly quantize the mu-law scaled matrices
+                # 32 levels of quantization between <0,1>
+                quantize, step = init_unif_quant(0, 1, 32)
+                quantize_vec = numpy.vectorize(quantize)
+
+                Wscq = quantize_vec(Wsc).astype(int)
+                Hscq = quantize_vec(Hsc).astype(int)
+
+                print(Wscq)
+
+                # TODO write step to file
+                # TODO Huffman the quantized matrices (make a codebook and compress)
 
                 # write the min and max to be re-scaled later
                 f.write(struct.pack('<dd', matrix_min, matrix_max))

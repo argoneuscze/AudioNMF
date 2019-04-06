@@ -1,6 +1,6 @@
 import numpy
 
-from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand
+from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand, init_unif_quant
 
 
 def test_scale_val_positive():
@@ -30,3 +30,18 @@ def test_mu_law():
     assert numpy.isclose(mu_law_expand(mu_law_compand(val1, 255), 255), val1)
     assert numpy.isclose(mu_law_expand(mu_law_compand(val2, 255), 255), val2)
     assert numpy.isclose(mu_law_expand(mu_law_compand(val3, 255), 255), val3)
+
+
+def test_unif_quant_val():
+    min_val = 0
+    max_val = 1
+    levels = 32
+
+    quantize, step = init_unif_quant(min_val, max_val, levels)
+
+    ref_step = max_val / (levels - 1)
+    assert ref_step == step
+
+    assert quantize(0) == 0
+    assert quantize(1) == 31
+    assert quantize(0.671) == 21
