@@ -58,4 +58,4 @@ def test_unif_quant_matrix():
     quant_matrix = quantize_vec(matrix)
     mult_matrix = dequantize_vec(quant_matrix)
 
-    assert numpy.allclose(matrix, mult_matrix, atol=0.5)
+    assert numpy.allclose(matrix, mult_matrix, atol=0.2)

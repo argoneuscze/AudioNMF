@@ -1,10 +1,9 @@
-import math
 import os
 
 import click as click
 
 from audionmf.audio.audio_data import AudioData
-from audionmf.util.plot_util import plot_signal, plot_spectrogram, plot_function
+from audionmf.util.plot_util import plot_signal, plot_spectrogram
 
 
 def get_filename_ext(path):
@@ -80,9 +79,6 @@ def debug_command():
         if file.endswith('.wav'):
             sample_filenames.append(os.path.splitext(file)[0])
 
-    plot_function(lambda x: 6 * math.asinh(x / 600), 60, 16000, 1, "bark_scale.png", "Bark scale", "Band #",
-                  "Frequency (Hz)")
-
     for filename in sample_filenames:
         print('Processing {}...'.format(filename))
 
@@ -114,3 +110,6 @@ def debug_command():
 
             with open(os.path.join(debug_path, '{}_dec_{}.wav'.format(filename, scheme)), 'wb') as output_file:
                 comp_audio.write_audio_file(output_file, 'wav')
+
+    # TODO remove debug
+    # plot_frequencies()

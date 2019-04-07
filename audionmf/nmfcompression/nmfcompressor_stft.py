@@ -4,7 +4,8 @@ import numpy
 import scipy.signal
 
 from audionmf.audio.channel import Channel
-from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand, init_unif_quant
+from audionmf.transforms.huffman import HuffmanCoder
+from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand, UniformQuantizer
 from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix, matrix_split
 from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
@@ -21,6 +22,16 @@ class NMFCompressorSTFT:
     # how many iterations and target rank of NMF
     NMF_MAX_ITER = 200
     NMF_RANK = 30
+
+    def __init__(self):
+        # initialize Huffman encoder/decoder
+        self.huffman = HuffmanCoder('stft32')
+        self.quantizer = UniformQuantizer(0, 1, 32)
+        self.quantize_vec = numpy.vectorize(self.quantizer.quantize_value)
+        self.dequantize_vec = numpy.vectorize(self.quantizer.dequantize_index)
+        self.scale_matrix = numpy.vectorize(scale_val)
+        self.compand = numpy.vectorize(mu_law_compand)
+        self.expand = numpy.vectorize(mu_law_expand)
 
     def compress(self, audio_data, f):
         print('Compressing (STFT)...')
@@ -53,41 +64,45 @@ class NMFCompressorSTFT:
                 # run NMF on the matrix
                 W, H, min_val = nmf_matrix(submatrix, self.NMF_MAX_ITER, self.NMF_RANK)
 
-                # write minimum value to be subtracted later
-                f.write(struct.pack('<d', min_val))
-
                 # scale values to [0,1] using the maximum range of both matrices
                 matrix_min = min(numpy.amin(W), numpy.amin(H))
                 matrix_max = max(numpy.amax(W), numpy.amax(H))
 
-                Ws = scale_val(W, matrix_min, matrix_max, 0, 1)
-                Hs = scale_val(H, matrix_min, matrix_max, 0, 1)
+                Ws = self.scale_matrix(W, matrix_min, matrix_max, 0, 1)
+                Hs = self.scale_matrix(H, matrix_min, matrix_max, 0, 1)
 
                 # compand the scaled matrices using mu-law
-                compand = numpy.vectorize(mu_law_compand)
+                Wsc = self.compand(Ws, 10 ** 4)
+                Hsc = self.compand(Hs, 10 ** 5)
 
-                Wsc = compand(Ws, 10 ** 4)
-                Hsc = compand(Hs, 10 ** 5)
-
-                # uniformly quantize the mu-law scaled matrices
+                # uniformly quantize the mu-law scaled matrix B (basis)
                 # 32 levels of quantization between <0,1>
-                quantize, step = init_unif_quant(0, 1, 32)
-                quantize_vec = numpy.vectorize(quantize)
+                Wscq = self.quantize_vec(Wsc)
 
-                Wscq = quantize_vec(Wsc).astype(int)
-                Hscq = quantize_vec(Hsc).astype(int)
+                # TODO remove debug
+                # for val in numpy.nditer(Wscq):
+                # increment_frequency(int(val))
+                # for val in numpy.nditer(Hscq):
+                #    increment_frequency(int(val))
+                # freq_done()
 
-                print(Wscq)
+                # Huffman encode the matrices
+                Wout, Wrows = self.huffman.encode_int_matrix(Wscq)
 
-                # TODO write step to file
-                # TODO Huffman the quantized matrices (make a codebook and compress)
+                # now write everything to file
+
+                # write minimum value to be subtracted later
+                f.write(struct.pack('<d', min_val))
 
                 # write the min and max to be re-scaled later
                 f.write(struct.pack('<dd', matrix_min, matrix_max))
 
-                # write matrices to file
-                serialize_matrix(f, Wsc)
+                # write companded H matrix
                 serialize_matrix(f, Hsc)
+
+                # write the quantized matrix H and number of rows
+                f.write(struct.pack('<II', Wrows, len(Wout)))
+                f.write(Wout)
 
     def decompress(self, f, audio_data):
         print('Decompressing (STFT)...')
@@ -104,32 +119,39 @@ class NMFCompressorSTFT:
             # read phases matrix
             phases = deserialize_matrix(f)
 
-            # read chunk count
+            # read magnitude matrix chunk count
             chunk_count = struct.unpack('<I', f.read(4))[0]
 
-            # read and multiply NMF chunks
+            # read and multiply NMF chunks to obtain magnitude matrix
             chunks = list()
 
             for _ in range(chunk_count):
                 # read minimum value
-                min_val = struct.unpack('<d', f.read(8))
+                min_val = struct.unpack('<d', f.read(8))[0]
 
                 # read min and max for re-scaling
                 matrix_min, matrix_max = struct.unpack('<dd', f.read(16))
 
-                # read scaled NMF magnitude matrices
-                Wsc = deserialize_matrix(f)
+                # read companded matrix H
                 Hsc = deserialize_matrix(f)
 
-                # expand the scaled matrices using mu-law
-                expand = numpy.vectorize(mu_law_expand)
+                # read Huffman encoded matrix H
+                Wrows, Wlen = struct.unpack('<II', f.read(8))
+                Wbytes = f.read(Wlen)
 
-                Ws = expand(Wsc, 10 ** 4)
-                Hs = expand(Hsc, 10 ** 5)
+                # Huffman decode the matrix to gain quantized values
+                Wscq = self.huffman.decode_int_matrix(Wbytes, Wrows)
+
+                # multiply each value by step to gain original values
+                Wsc = self.dequantize_vec(Wscq)
+
+                # expand the scaled matrices using mu-law
+                Ws = self.expand(Wsc, 10 ** 4)
+                Hs = self.expand(Hsc, 10 ** 5)
 
                 # scale matrices back to normal
-                W = scale_val(Ws, 0, 1, matrix_min, matrix_max)
-                H = scale_val(Hs, 0, 1, matrix_min, matrix_max)
+                W = self.scale_matrix(Ws, 0, 1, matrix_min, matrix_max)
+                H = self.scale_matrix(Hs, 0, 1, matrix_min, matrix_max)
 
                 # get original chunk back
                 mag_chunk = nmf_matrix_original(W, H, min_val)
