@@ -1,6 +1,6 @@
 import numpy
 
-from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand, init_unif_quant
+from audionmf.transforms.quantization import scale_val, mu_law_compand, mu_law_expand, UniformQuantizer
 
 
 def test_scale_val_positive():
@@ -37,11 +37,25 @@ def test_unif_quant_val():
     max_val = 1
     levels = 32
 
-    quantize, step = init_unif_quant(min_val, max_val, levels)
+    quantizer = UniformQuantizer(min_val, max_val, levels)
 
-    ref_step = max_val / (levels - 1)
-    assert ref_step == step
+    assert quantizer.quantize_value(0) == 0
+    assert quantizer.quantize_value(1) == 31
+    assert quantizer.quantize_value(0.671) == 21
 
-    assert quantize(0) == 0
-    assert quantize(1) == 31
-    assert quantize(0.671) == 21
+
+def test_unif_quant_matrix():
+    matrix = numpy.array([
+        [1, 2, 3],
+        [4, 5, 6],
+        [7, 8, 9]
+    ])
+
+    quantizer = UniformQuantizer(1, 9, 64)
+    quantize_vec = numpy.vectorize(quantizer.quantize_value)
+    dequantize_vec = numpy.vectorize(quantizer.dequantize_index)
+
+    quant_matrix = quantize_vec(matrix)
+    mult_matrix = dequantize_vec(quant_matrix)
+
+    assert numpy.allclose(matrix, mult_matrix, atol=0.5)

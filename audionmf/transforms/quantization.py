@@ -18,14 +18,19 @@ def mu_law_expand(y, mu=255):
     return numpy.sign(y) * (1 / mu) * (((1 + mu) ** abs(y)) - 1)
 
 
-def init_unif_quant(min_val, max_val, levels):
-    """ Initializes a uniform quantizer of N levels. """
-    val_range = max_val - min_val
-    step = val_range / (levels - 1)
+class UniformQuantizer:
+    """ A uniform quantizer of N levels. """
 
-    def unif_quant_val(x):
+    def __init__(self, min_val, max_val, levels):
+        val_range = max_val - min_val
+        self.step = val_range / (levels - 1)
+        self.min_val = min_val
+
+    def quantize_value(self, x):
         """ Quantizes a value to the according level. """
-        quant_val_idx = round((x - min_val) / step)
+        quant_val_idx = round((x - self.min_val) / self.step)
         return quant_val_idx
 
-    return unif_quant_val, step
+    def dequantize_index(self, idx):
+        """ Returns the original value based on the index. """
+        return self.min_val + idx * self.step
