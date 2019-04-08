@@ -86,7 +86,7 @@ class NMFCompressorSTFT:
                 #    increment_frequency(int(val))
                 # freq_done()
 
-                # Huffman encode the matrices
+                # Huffman encode the matrix
                 Wout, Wrows = self.huffman.encode_int_matrix(Wscq)
 
                 # now write everything to file
@@ -97,7 +97,7 @@ class NMFCompressorSTFT:
                 # write the min and max to be re-scaled later
                 f.write(struct.pack('<dd', matrix_min, matrix_max))
 
-                # write companded H matrix
+                # write companded W matrix
                 serialize_matrix(f, Hsc)
 
                 # write the quantized matrix H and number of rows

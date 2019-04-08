@@ -28,7 +28,7 @@ class UniformQuantizer:
 
     def quantize_value(self, x):
         """ Quantizes a value to the according level. """
-        quant_val_idx = numpy.round((x - self.min_val) / self.step)
+        quant_val_idx = numpy.floor(((x - self.min_val) / self.step) + 0.5)
         return int(quant_val_idx)
 
     def dequantize_index(self, idx):
