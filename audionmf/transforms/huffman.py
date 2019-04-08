@@ -59,7 +59,7 @@ class HuffmanCoder:
 
     def encode_int_matrix(self, matrix):
         rows = matrix.shape[0]
-        ary = matrix.reshape(-1).tolist()[0]
+        ary = matrix.reshape(-1).tolist()
         return self.encode_int_array(ary), rows
 
     def decode_int_matrix(self, raw_bytes, rows):

@@ -75,11 +75,11 @@ class NMFCompressorSTFT:
                 Wsc = self.compand(Ws, 10 ** 4)
                 Hsc = self.compand(Hs, 10 ** 5)
 
-                # uniformly quantize the mu-law scaled matrix B (basis)
+                # uniformly quantize the mu-law scaled matrix H (coefficients)
                 # 32 levels of quantization between <0,1>
-                Wscq = self.quantize_vec(Wsc)
+                Hscq = self.quantize_vec(Hsc)
 
-                # TODO remove debug
+                # TODO get Huffman for H
                 # for val in numpy.nditer(Wscq):
                 # increment_frequency(int(val))
                 # for val in numpy.nditer(Hscq):
@@ -87,7 +87,7 @@ class NMFCompressorSTFT:
                 # freq_done()
 
                 # Huffman encode the matrix
-                Wout, Wrows = self.huffman.encode_int_matrix(Wscq)
+                Hout, Hrows = self.huffman.encode_int_matrix(Hscq)
 
                 # now write everything to file
 
@@ -98,11 +98,11 @@ class NMFCompressorSTFT:
                 f.write(struct.pack('<dd', matrix_min, matrix_max))
 
                 # write companded W matrix
-                serialize_matrix(f, Hsc)
+                serialize_matrix(f, Wsc)
 
                 # write the quantized matrix H and number of rows
-                f.write(struct.pack('<II', Wrows, len(Wout)))
-                f.write(Wout)
+                f.write(struct.pack('<II', Hrows, len(Hout)))
+                f.write(Hout)
 
     def decompress(self, f, audio_data):
         print('Decompressing (STFT)...')
@@ -132,18 +132,18 @@ class NMFCompressorSTFT:
                 # read min and max for re-scaling
                 matrix_min, matrix_max = struct.unpack('<dd', f.read(16))
 
-                # read companded matrix H
-                Hsc = deserialize_matrix(f)
+                # read companded matrix W
+                Wsc = deserialize_matrix(f)
 
                 # read Huffman encoded matrix H
-                Wrows, Wlen = struct.unpack('<II', f.read(8))
-                Wbytes = f.read(Wlen)
+                Hrows, Hlen = struct.unpack('<II', f.read(8))
+                Hbytes = f.read(Hlen)
 
                 # Huffman decode the matrix to gain quantized values
-                Wscq = self.huffman.decode_int_matrix(Wbytes, Wrows)
+                Hscq = self.huffman.decode_int_matrix(Hbytes, Hrows)
 
                 # multiply each value by step to gain original values
-                Wsc = self.dequantize_vec(Wscq)
+                Hsc = self.dequantize_vec(Hscq)
 
                 # expand the scaled matrices using mu-law
                 Ws = self.expand(Wsc, 10 ** 4)
