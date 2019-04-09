@@ -111,5 +111,5 @@ def debug_command():
             with open(os.path.join(debug_path, '{}_dec_{}.wav'.format(filename, scheme)), 'wb') as output_file:
                 comp_audio.write_audio_file(output_file, 'wav')
 
-    # TODO remove debug
+    # debug
     # plot_frequencies()

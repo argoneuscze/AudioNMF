@@ -25,10 +25,14 @@ class NMFCompressorSTFT:
 
     def __init__(self):
         # initialize Huffman encoder/decoder
-        self.huffman = HuffmanCoder('stft32')
-        self.quantizer = UniformQuantizer(0, 1, 32)
-        self.quantize_vec = numpy.vectorize(self.quantizer.quantize_value)
-        self.dequantize_vec = numpy.vectorize(self.quantizer.dequantize_index)
+        self.Phuffman = HuffmanCoder('stftp')
+        self.Pquantizer = UniformQuantizer(-numpy.pi, numpy.pi, 2 ** 3)
+        self.Pquantize_vec = numpy.vectorize(self.Pquantizer.quantize_value)
+        self.Pdequantize_vec = numpy.vectorize(self.Pquantizer.dequantize_index)
+        self.Hhuffman = HuffmanCoder('stft32')
+        self.Hquantizer = UniformQuantizer(0, 1, 2 ** 5)
+        self.Hquantize_vec = numpy.vectorize(self.Hquantizer.quantize_value)
+        self.Hdequantize_vec = numpy.vectorize(self.Hquantizer.dequantize_index)
         self.scale_matrix = numpy.vectorize(scale_val)
         self.compand = numpy.vectorize(mu_law_compand)
         self.expand = numpy.vectorize(mu_law_expand)
@@ -50,14 +54,19 @@ class NMFCompressorSTFT:
             phases = numpy.angle(stft)
             magnitudes = numpy.absolute(stft)
 
-            # serialize the phases matrix
-            serialize_matrix(f, phases)
-
             # split the magnitude matrix into chunks
             submatrices = matrix_split(magnitudes, self.NMF_CHUNK_SIZE)
 
-            # write the chunk count into the file
+            # write the magnitude chunk count into the file
             f.write(struct.pack('<I', len(submatrices)))
+
+            # compress phases using Huffman
+            Pq = self.Pquantize_vec(phases)
+            Pout, Prows = self.Phuffman.encode_int_matrix(Pq)
+
+            # write quantized phase matrix
+            f.write(struct.pack('<II', Prows, len(Pout)))
+            f.write(Pout)
 
             # run NMF on the magnitude submatrices, getting their weights and coefficients
             for submatrix in submatrices:
@@ -77,9 +86,9 @@ class NMFCompressorSTFT:
 
                 # uniformly quantize the mu-law scaled matrix H (coefficients)
                 # 32 levels of quantization between <0,1>
-                Hscq = self.quantize_vec(Hsc)
+                Hscq = self.Hquantize_vec(Hsc)
 
-                # TODO get Huffman for H
+                # debug
                 # for val in numpy.nditer(Wscq):
                 # increment_frequency(int(val))
                 # for val in numpy.nditer(Hscq):
@@ -87,7 +96,7 @@ class NMFCompressorSTFT:
                 # freq_done()
 
                 # Huffman encode the matrix
-                Hout, Hrows = self.huffman.encode_int_matrix(Hscq)
+                Hout, Hrows = self.Hhuffman.encode_int_matrix(Hscq)
 
                 # for W, we scale it to 16-bit unsigned int
                 Wscs = self.scale_matrix(Wsc, 0, 1, 0, 2 ** 32).astype(numpy.uint32)
@@ -119,11 +128,18 @@ class NMFCompressorSTFT:
         for i in range(channel_count):
             channel = Channel()
 
-            # read phases matrix
-            phases = deserialize_matrix(f)
-
             # read magnitude matrix chunk count
             chunk_count = struct.unpack('<I', f.read(4))[0]
+
+            # read phases matrix
+            Prows, Plen = struct.unpack('<II', f.read(8))
+            Pbytes = f.read(Plen)
+
+            # Huffman decode the matrix to gain quantized values
+            Pq = self.Phuffman.decode_int_matrix(Pbytes, Prows)
+
+            # multiply each value by step to gain original values
+            phases = self.Pdequantize_vec(Pq)
 
             # read and multiply NMF chunks to obtain magnitude matrix
             chunks = list()
@@ -146,10 +162,10 @@ class NMFCompressorSTFT:
                 Wsc = self.scale_matrix(Wscs, 0, 2 ** 32, 0, 1)
 
                 # Huffman decode the matrix to gain quantized values
-                Hscq = self.huffman.decode_int_matrix(Hbytes, Hrows)
+                Hscq = self.Hhuffman.decode_int_matrix(Hbytes, Hrows)
 
                 # multiply each value by step to gain original values
-                Hsc = self.dequantize_vec(Hscq)
+                Hsc = self.Hdequantize_vec(Hscq)
 
                 # expand the scaled matrices using mu-law
                 Ws = self.expand(Wsc, 10 ** 4)
