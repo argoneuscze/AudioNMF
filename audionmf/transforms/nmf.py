@@ -19,8 +19,6 @@ class NMF:
 
     def validate(self):
         """ Makes sure the matrix can be factorized. """
-        if self.W.shape[1] >= min(self.V.shape):
-            raise NMFError('Rank larger than the original dimensions.')
         if numpy.amin(self.V) < 0:
             raise NMFError('Original matrix contains negative values.')
 
