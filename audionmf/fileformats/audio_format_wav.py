@@ -9,7 +9,12 @@ class AudioFormatWAV(AudioFormat):
     def fill_audio_data(self, wav_file_fd, audio_data):
         rate, raw_data = wavfile.read(wav_file_fd)
         if raw_data.dtype != 'int16':
-            raise Exception('WAV format must be 16-bit integers')  # TODO convert
+            raise Exception('WAV format must be 16-bit integers')
+
+        # replace all 0s with 1s to prevent division by zero during processing
+        raw_data.setflags(write=1)
+        raw_data[raw_data == 0] = 1
+
         audio_data.sample_rate = rate
         for i in range(numpy.size(raw_data, 1)):
             c = Channel()

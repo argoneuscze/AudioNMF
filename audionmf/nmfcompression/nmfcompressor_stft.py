@@ -21,7 +21,7 @@ class NMFCompressorSTFT:
 
     # how many iterations and target rank of NMF
     NMF_MAX_ITER = 200
-    NMF_RANK = 30
+    NMF_RANK = 40
 
     def __init__(self):
         # initialize Huffman encoder/decoder
@@ -89,6 +89,9 @@ class NMFCompressorSTFT:
                 # Huffman encode the matrix
                 Hout, Hrows = self.huffman.encode_int_matrix(Hscq)
 
+                # for W, we scale it to 16-bit unsigned int
+                Wscs = self.scale_matrix(Wsc, 0, 1, 0, 2 ** 32).astype(numpy.uint32)
+
                 # now write everything to file
 
                 # write minimum value to be subtracted later
@@ -97,8 +100,8 @@ class NMFCompressorSTFT:
                 # write the min and max to be re-scaled later
                 f.write(struct.pack('<dd', matrix_min, matrix_max))
 
-                # write companded W matrix
-                serialize_matrix(f, Wsc)
+                # write companded scaled W matrix
+                serialize_matrix(f, Wscs, 'I')
 
                 # write the quantized matrix H and number of rows
                 f.write(struct.pack('<II', Hrows, len(Hout)))
@@ -132,12 +135,15 @@ class NMFCompressorSTFT:
                 # read min and max for re-scaling
                 matrix_min, matrix_max = struct.unpack('<dd', f.read(16))
 
-                # read companded matrix W
-                Wsc = deserialize_matrix(f)
+                # read companded scaled matrix W
+                Wscs = deserialize_matrix(f, 'I')
 
                 # read Huffman encoded matrix H
                 Hrows, Hlen = struct.unpack('<II', f.read(8))
                 Hbytes = f.read(Hlen)
+
+                # scale matrix W back
+                Wsc = self.scale_matrix(Wscs, 0, 2 ** 32, 0, 1)
 
                 # Huffman decode the matrix to gain quantized values
                 Hscq = self.huffman.decode_int_matrix(Hbytes, Hrows)

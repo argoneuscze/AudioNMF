@@ -33,6 +33,7 @@ class NMF:
             cost = self.eval_cost(self)
             if cost == last_cost:
                 break
+            last_cost = cost
         return self.W, self.H
 
     def init_random(self):
