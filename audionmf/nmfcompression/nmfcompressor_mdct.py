@@ -5,7 +5,7 @@ import numpy
 from audionmf.audio.channel import Channel
 from audionmf.transforms.mdct import mdct, imdct
 from audionmf.util.matrix_util import serialize_matrix, deserialize_matrix, matrix_split
-from audionmf.util.nmf_util import nmf_matrix
+from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
 
 class NMFCompressorMDCT:
@@ -15,10 +15,10 @@ class NMFCompressorMDCT:
 
     # how many frames to put together in a matrix
     # e.g. 1152 // 2 = 576 subbands (bins), NMF_CHUNK_SIZE = 200 => 200x576 matrix as input to NMF
-    NMF_CHUNK_SIZE = 500
+    NMF_CHUNK_SIZE = 200
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 500
+    NMF_MAX_ITER = 400
     NMF_RANK = 40
 
     def compress(self, audio_data, f):
@@ -82,7 +82,7 @@ class NMFCompressorMDCT:
                 H = deserialize_matrix(f)
 
                 # get the original matrix
-                mdct_matrix = numpy.matmul(W, H) - min_val
+                mdct_matrix = nmf_matrix_original(W, H, min_val)
 
                 # add it to the chunk list to be re-joined
                 chunks.append(mdct_matrix)

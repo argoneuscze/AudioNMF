@@ -94,7 +94,7 @@ def debug_command():
         # schemes = compression_schemes.keys()
 
         # debug STFT
-        schemes = ['anmfs']
+        schemes = ['anmfm']
 
         for scheme in schemes:
             comp_path = '{}_com.{}'.format(filename, scheme)
