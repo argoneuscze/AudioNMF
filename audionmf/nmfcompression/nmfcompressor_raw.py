@@ -1,11 +1,11 @@
-import math
 import struct
 
+import math
 import numpy
 
 from audionmf.audio.channel import Channel
 from audionmf.util.matrix_util import array_pad_split, serialize_matrix, deserialize_matrix
-from audionmf.util.nmf_util import nmf_matrix
+from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
 
 class NMFCompressorRaw:
@@ -38,20 +38,14 @@ class NMFCompressorRaw:
     # tuple that says how large chunks to group up together into matrices
     # (rows, cols), will be padded with zeros if too small
     # if set to None, the whole signal will be one chunk with a square size
-    CHUNK_SHAPE = (1000, 150)
+    CHUNK_SHAPE = (1152, 200)
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 500
-    NMF_RANK = 30
+    NMF_MAX_ITER = 400
+    NMF_RANK = 40
 
     def compress(self, audio_data, output_fd):
         f = output_fd
-
-        # debug
-        # self.FFT_SIZE = 10
-        # temp_c = Channel()
-        # temp_c.add_sample_array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-        # audio_data.channels = [temp_c]
 
         print('Compressing (RAW)...')
 
@@ -83,7 +77,7 @@ class NMFCompressorRaw:
             # (there's two matrices per matrix due to NMF)
             f.write(struct.pack('<II', padding, len(matrix_list)))
 
-            # process all the matrices, real ones first
+            # run NMF on the matrices
             for matrix in matrix_list:
                 # run NMF on the matrix
                 W, H, min_val = nmf_matrix(matrix, self.NMF_MAX_ITER, self.NMF_RANK)
@@ -124,7 +118,7 @@ class NMFCompressorRaw:
                 H = deserialize_matrix(f)
 
                 # multiply matrices and subtract old min values
-                matrix = numpy.matmul(W, H) - min_val
+                matrix = nmf_matrix_original(W, H, min_val)
 
                 # turn the matrix back into an array
                 ary = matrix.ravel()

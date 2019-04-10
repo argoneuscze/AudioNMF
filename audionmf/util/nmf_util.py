@@ -15,7 +15,7 @@ def nmf_matrix(matrix, max_iter=100, rank=30):
     # H = nmf.coef()
 
     # calculate NMF
-    nmf = NMF(matrix, max_iter=max_iter, rank=rank)
+    nmf = NMF(matrix_inc, max_iter=max_iter, rank=rank)
     W, H = nmf.factorize()
 
     return W, H, min_val
