@@ -9,32 +9,6 @@ from audionmf.util.nmf_util import nmf_matrix, nmf_matrix_original
 
 
 class NMFCompressorRaw:
-    """
-    .anmf data format spec
-
-    all multi-byte values are in little endian
-
-    offset | size | description
-    8 byte header
-    0        4      'ANMF' string
-    4        2      # of channels, 16-bit unsigned integer
-    6        4      sample rate, 32-bit unsigned integer
-
-    the rest is per-channel data in the following format (relative offsets)
-    0        4              padding (extra values to be stripped after multiplication), 32-bit unsigned integer
-    4        4              # of rows (W) [r1], 32-bit unsigned integer
-    8        4              # of columns (W) [c1], 32-bit unsigned integer
-    12       4              # of rows (H) [r2], 32-bit unsigned integer
-    16       4              # of columns (H) [c2], 32-bit unsigned integer
-    20       r1*c1 + r2*c2  data (W and then H), row by row, 64-bit floats # TODO use 32-bit floats?
-
-    note the data stored is unsigned integers, after multiplication it has to be
-    converted back to signed integers
-
-    # TODO this whole thing is outdated
-
-    """
-
     # tuple that says how large chunks to group up together into matrices
     # (rows, cols), will be padded with zeros if too small
     # if set to None, the whole signal will be one chunk with a square size

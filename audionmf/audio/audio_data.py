@@ -1,5 +1,4 @@
 from audionmf.fileformats.audio_format_wav import AudioFormatWAV
-from audionmf.nmfcompression.nmfcompressor_fft import NMFCompressorFFT
 from audionmf.nmfcompression.nmfcompressor_mdct import NMFCompressorMDCT
 from audionmf.nmfcompression.nmfcompressor_raw import NMFCompressorRaw
 from audionmf.nmfcompression.nmfcompressor_stft import NMFCompressorSTFT
@@ -11,7 +10,6 @@ audio_formats = {
 compression_schemes = {
     'anmfs': NMFCompressorSTFT,
     'anmfr': NMFCompressorRaw,
-    'anmff': NMFCompressorFFT,
     'anmfm': NMFCompressorMDCT
 }
 
