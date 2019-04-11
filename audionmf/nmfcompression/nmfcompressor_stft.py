@@ -40,7 +40,7 @@ class NMFCompressorSTFT:
     def compress(self, audio_data, f):
         print('Compressing (STFT)...')
 
-        f.write(b'ANMF')
+        f.write(b'ANMFS')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
         for i, channel in enumerate(audio_data.channels):
@@ -120,8 +120,8 @@ class NMFCompressorSTFT:
         print('Decompressing (STFT)...')
 
         data = f.read(4)
-        if data != b'ANMF':
-            raise Exception('Invalid file format. Expected .anmf.')
+        if data != b'ANMFS':
+            raise Exception('Invalid file format. Expected .anmfs.')
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))
         audio_data.sample_rate = sample_rate
 

@@ -49,7 +49,7 @@ class NMFCompressorRaw:
 
         print('Compressing (RAW)...')
 
-        f.write(b'ANMF')
+        f.write(b'ANMFR')
         f.write(struct.pack('<HI', len(audio_data.channels), audio_data.sample_rate))
 
         for channel in audio_data.channels:
@@ -95,8 +95,8 @@ class NMFCompressorRaw:
         print('Decompressing (RAW)...')
 
         data = f.read(4)
-        if data != b'ANMF':
-            raise Exception('Invalid file format. Expected .anmf.')
+        if data != b'ANMFR':
+            raise Exception('Invalid file format. Expected .anmfr.')
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))
         audio_data.sample_rate = sample_rate
 
