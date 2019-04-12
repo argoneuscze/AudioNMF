@@ -68,7 +68,7 @@ class NMFCompressorRaw:
 
         print('Decompressing (RAW)...')
 
-        data = f.read(4)
+        data = f.read(5)
         if data != b'ANMFR':
             raise Exception('Invalid file format. Expected .anmfr.')
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))

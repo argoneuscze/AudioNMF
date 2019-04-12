@@ -119,7 +119,7 @@ class NMFCompressorSTFT:
     def decompress(self, f, audio_data):
         print('Decompressing (STFT)...')
 
-        data = f.read(4)
+        data = f.read(5)
         if data != b'ANMFS':
             raise Exception('Invalid file format. Expected .anmfs.')
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))

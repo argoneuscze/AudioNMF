@@ -55,7 +55,7 @@ class NMFCompressorMDCT:
     def decompress(self, f, audio_data):
         print('Decompressing (MDCT)...')
 
-        data = f.read(4)
+        data = f.read(5)
         if data != b'ANMFM':
             raise Exception('Invalid file format. Expected .anmfm.')
         channel_count, sample_rate = struct.unpack('<HI', f.read(6))
