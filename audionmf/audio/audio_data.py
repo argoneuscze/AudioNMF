@@ -32,9 +32,8 @@ def get_compression_format(string):
 
 class AudioData:
     def __init__(self):
-        self.sample_rate = 0  # todo sanity check
+        self.sample_rate = 0
         self.channels = list()
-        ...  # TODO various metadata, rate, samples, etc.
 
     def add_channel(self, channel):
         self.channels.append(channel)
