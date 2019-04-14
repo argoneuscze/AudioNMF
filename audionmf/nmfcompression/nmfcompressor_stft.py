@@ -23,7 +23,7 @@ class NMFCompressorSTFT:
     NMF_MAX_ITER = 200
     NMF_RANK = 40
 
-    # mu-law companding values
+    # mu-law companding parameters
     MU_LAW_W = 10 ** 4
     MU_LAW_H = 10 ** 5
 
