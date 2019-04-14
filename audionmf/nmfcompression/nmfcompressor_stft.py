@@ -23,6 +23,10 @@ class NMFCompressorSTFT:
     NMF_MAX_ITER = 200
     NMF_RANK = 40
 
+    # mu-law companding values
+    MU_LAW_W = 10 ** 4
+    MU_LAW_H = 10 ** 5
+
     def __init__(self):
         # initialize Huffman encoder/decoder
         self.Phuffman = HuffmanCoder('stftp')
@@ -81,8 +85,8 @@ class NMFCompressorSTFT:
                 Hs = self.scale_matrix(H, matrix_min, matrix_max, 0, 1)
 
                 # compand the scaled matrices using mu-law
-                Wsc = self.compand(Ws, 10 ** 4)
-                Hsc = self.compand(Hs, 10 ** 5)
+                Wsc = self.compand(Ws, self.MU_LAW_W)
+                Hsc = self.compand(Hs, self.MU_LAW_H)
 
                 # uniformly quantize the mu-law scaled matrix H (coefficients)
                 # 32 levels of quantization between <0,1>
@@ -168,8 +172,8 @@ class NMFCompressorSTFT:
                 Hsc = self.Hdequantize_vec(Hscq)
 
                 # expand the scaled matrices using mu-law
-                Ws = self.expand(Wsc, 10 ** 4)
-                Hs = self.expand(Hsc, 10 ** 5)
+                Ws = self.expand(Wsc, self.MU_LAW_W)
+                Hs = self.expand(Hsc, self.MU_LAW_H)
 
                 # scale matrices back to normal
                 W = self.scale_matrix(Ws, 0, 1, matrix_min, matrix_max)
