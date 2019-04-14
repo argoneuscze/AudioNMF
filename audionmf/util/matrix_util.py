@@ -43,9 +43,3 @@ def matrix_split(matrix, N):
         submatrix = matrix[i * N:i * N + N]
         submatrices.append(submatrix)
     return submatrices
-
-
-def increment_by_min(matrix):
-    # increments matrix by its lowest value and returns the structure and the absolute value
-    min_val = abs(numpy.amin(matrix))
-    return matrix + min_val, min_val

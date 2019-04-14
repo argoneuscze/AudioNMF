@@ -1,7 +1,6 @@
 import numpy
 
 from audionmf.transforms.nmf import NMF
-from audionmf.util.matrix_util import increment_by_min
 
 
 def nmf_matrix(matrix, max_iter=100, rank=30):
@@ -26,3 +25,9 @@ def nmf_matrix_original(W, H, min_val):
     matrix = numpy.matmul(W, H) - min_val
 
     return matrix
+
+
+def increment_by_min(matrix):
+    # increments matrix by its lowest value and returns the structure and the absolute value
+    min_val = abs(numpy.amin(matrix))
+    return matrix + min_val, min_val
