@@ -15,7 +15,7 @@ class NMFCompressorRaw:
     CHUNK_SHAPE = (1152, 200)
 
     # how many iterations and target rank of NMF
-    NMF_MAX_ITER = 400
+    NMF_MAX_ITER = 3000
     NMF_RANK = 40
 
     def compress(self, audio_data, output_fd):

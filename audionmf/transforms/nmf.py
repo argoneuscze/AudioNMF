@@ -1,5 +1,7 @@
 import numpy
 
+from audionmf.scripts.data_plotter import add_data_point
+
 
 class NMFError(Exception):
     pass
@@ -29,9 +31,13 @@ class NMF:
         for i in range(self.max_iter):
             self.update(self)
             cost = self.eval_cost(self)
+            add_data_point(cost)
             if cost == last_cost:
                 break
             last_cost = cost
+        # TODO debug
+        # plot_data("Iteration index", "Cost function value")
+        # exit(1)
         return self.W, self.H
 
     def init_random(self):

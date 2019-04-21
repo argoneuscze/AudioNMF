@@ -10,7 +10,6 @@ output_dir = '../debug'
 
 comp_map = {
     'r': 'RAW',
-    'f': 'FFT',
     'm': 'MDCT',
     's': 'STFT'
 }
@@ -32,7 +31,10 @@ for fn in sample_filenames:
 
     print('== Testing {} =='.format(fn))
 
-    for comp in comp_map.keys():
+    # one at a time
+    current_key = ['m']
+    for comp in current_key:
+        # for comp in comp_map.keys():
         c_file = os.path.join(output_dir, '{}_dec_anmf{}.wav'.format(fn, comp))
         peaq_out = subprocess.check_output(['peaq', peaq_flag, orig, c_file]).decode('utf-8')
 

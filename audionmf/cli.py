@@ -1,4 +1,5 @@
 import os
+import time
 
 import click as click
 
@@ -100,7 +101,10 @@ def debug_command():
             comp_path = '{}_com.{}'.format(filename, scheme)
 
             with open(os.path.join(debug_path, comp_path), 'wb') as comp_file:
+                start_time = time.time()
                 audio.write_compressed_file(comp_file, scheme)
+                end_time = time.time()
+                print('time: {}'.format(end_time - start_time))
 
             with open(os.path.join(debug_path, comp_path), 'rb') as comp_file:
                 comp_audio = AudioData.from_compressed_file(comp_file, scheme)

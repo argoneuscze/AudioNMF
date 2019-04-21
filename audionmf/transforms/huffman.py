@@ -1,6 +1,7 @@
 # average frequencies extracted with get_quant_freq.py
 import numpy
 from dahuffman import HuffmanCodec
+from dahuffman.huffmancodec import _EndOfFileSymbol
 
 frequencies = {
     'stft32': {
@@ -76,11 +77,23 @@ class HuffmanCoder:
         ary = self.decode_int_array(raw_bytes)
         return numpy.reshape(ary, (rows, -1))
 
-    def get_expected_value(self):
-        total = sum(self.freqs.values())
+    def get_expected_bits(self):
+        table = self.codec.get_code_table()
+        bitsizes = {}
+        for key in table.keys():
+            bitsizes[key] = table[key][0]
+        bitsizes.pop(_EndOfFileSymbol())
+        bit_dict = {}
+        for i in range(max(bitsizes.values()) + 1):
+            bit_dict[i] = 0
+            for key, val in bitsizes.items():
+                if i != val:
+                    continue
+                bit_dict[i] += self.freqs[key]
+        total = sum(bit_dict.values())
         items = []
-        for val in self.freqs.keys():
-            item = val * (self.freqs[val] / total)
+        for val in bit_dict.keys():
+            item = val * (bit_dict[val] / total)
             items.append(item)
         ex_val = sum(items)
         return ex_val
