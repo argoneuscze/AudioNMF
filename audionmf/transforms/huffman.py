@@ -53,8 +53,8 @@ frequencies = {
 class HuffmanCoder:
     def __init__(self, method):
         try:
-            freqs = frequencies[method]
-            self.codec = HuffmanCodec.from_frequencies(freqs)
+            self.freqs = frequencies[method]
+            self.codec = HuffmanCodec.from_frequencies(self.freqs)
         except KeyError:
             raise KeyError('Invalid Huffman dictionary.')
 
@@ -75,3 +75,12 @@ class HuffmanCoder:
     def decode_int_matrix(self, raw_bytes, rows):
         ary = self.decode_int_array(raw_bytes)
         return numpy.reshape(ary, (rows, -1))
+
+    def get_expected_value(self):
+        total = sum(self.freqs.values())
+        items = []
+        for val in self.freqs.keys():
+            item = val * (self.freqs[val] / total)
+            items.append(item)
+        ex_val = sum(items)
+        return ex_val
