@@ -72,6 +72,8 @@ def debug_command():
     debug_path = 'debug'
     example_path = 'examples'
 
+    avg_time = 0
+
     if not os.path.exists(debug_path):
         os.makedirs(debug_path)
 
@@ -104,7 +106,9 @@ def debug_command():
                 start_time = time.time()
                 audio.write_compressed_file(comp_file, scheme)
                 end_time = time.time()
-                print('time: {}'.format(end_time - start_time))
+                runtime = end_time - start_time
+                avg_time += runtime / len(sample_filenames)
+                print('time: {}'.format(runtime))
 
             with open(os.path.join(debug_path, comp_path), 'rb') as comp_file:
                 comp_audio = AudioData.from_compressed_file(comp_file, scheme)
@@ -114,6 +118,8 @@ def debug_command():
 
             with open(os.path.join(debug_path, '{}_dec_{}.wav'.format(filename, scheme)), 'wb') as output_file:
                 comp_audio.write_audio_file(output_file, 'wav')
+
+    print('average runtime: {}'.format(avg_time))
 
     # debug
     # plot_frequencies()
