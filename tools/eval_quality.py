@@ -32,7 +32,7 @@ for fn in sample_filenames:
     print('== Testing {} =='.format(fn))
 
     # one at a time
-    current_key = ['m']
+    current_key = ['s']
     for comp in current_key:
         # for comp in comp_map.keys():
         c_file = os.path.join(output_dir, '{}_dec_anmf{}.wav'.format(fn, comp))

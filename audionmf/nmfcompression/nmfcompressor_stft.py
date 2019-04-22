@@ -17,7 +17,7 @@ class NMFCompressorSTFT:
 
     # how many frames to put together in a matrix
     # e.g. (1152 // 2) + 1 = 577 subbands (bins), NMF_CHUNK_SIZE = 200 => 577x200 matrix as input to NMF
-    NMF_CHUNK_SIZE = 200
+    NMF_CHUNK_SIZE = 500
 
     # how many iterations and target rank of NMF
     NMF_MAX_ITER = 1000
@@ -102,7 +102,7 @@ class NMFCompressorSTFT:
                 # Huffman encode the matrix
                 Hout, Hrows = self.Hhuffman.encode_int_matrix(Hscq)
 
-                # for W, we scale it to 16-bit unsigned int
+                # for W, we scale it to 32-bit unsigned int
                 Wscs = self.scale_matrix(Wsc, 0, 1, 0, 2 ** 32).astype(numpy.uint32)
 
                 # now write everything to file
