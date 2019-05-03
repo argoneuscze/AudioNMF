@@ -7,20 +7,26 @@ setuptools.setup(
     description="A tool used for compressing audio using NMF.",
 
     long_description=open('README.md').read(),
-    version='0.0.1',
-    packages=setuptools.find_packages(),
+    version='1.0.0',
+    packages=setuptools.find_packages(exclude=['tests']),
     license='MIT',
 
     install_requires=[
         "click",
-        "numpy",
         "scipy>=1.2.0",
-        'nimfa'
+        "numpy",
+        "dahuffman"
     ],
 
     setup_requires=["pytest-runner"],
 
     tests_require=["pytest"],
+
+    extras_require={
+        'dev': [
+            "matplotlib"
+        ]
+    },
 
     entry_points={
         'console_scripts': [

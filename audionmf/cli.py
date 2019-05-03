@@ -4,7 +4,6 @@ import time
 import click as click
 
 from audionmf.audio.audio_data import AudioData
-from audionmf.util.plot_util import plot_signal, plot_spectrogram
 
 
 def get_filename_ext(path):
@@ -67,7 +66,7 @@ def decompress_command(input_file, output_file):
     output_file.close()
 
 
-@cli.command(name='debug')
+@cli.command(name='debug', hidden=True)
 def debug_command():
     debug_path = 'debug'
     example_path = 'examples'
@@ -89,10 +88,10 @@ def debug_command():
             audio = AudioData.from_audio_file(input_file, 'wav')
 
         sample_signal_in = audio.channels[0].samples
-        plot_signal(sample_signal_in, os.path.join(debug_path, '{}_sig_in.png'.format(filename)),
-                    "Example audio signal", "Sample #", "Amplitude")
-        plot_spectrogram(sample_signal_in, os.path.join(debug_path, '{}_sig_in_s.png'.format(filename)),
-                         "Example spectrogram")
+        # plot_signal(sample_signal_in, os.path.join(debug_path, '{}_sig_in.png'.format(filename)),
+        #            "Example audio signal", "Sample #", "Amplitude")
+        # plot_spectrogram(sample_signal_in, os.path.join(debug_path, '{}_sig_in_s.png'.format(filename)),
+        #                 "Example spectrogram")
 
         # schemes = compression_schemes.keys()
 
@@ -114,7 +113,7 @@ def debug_command():
                 comp_audio = AudioData.from_compressed_file(comp_file, scheme)
 
             sample_signal_out = comp_audio.channels[0].samples
-            plot_signal(sample_signal_out, os.path.join(debug_path, '{}_sig_{}_out.png'.format(filename, scheme)))
+            # plot_signal(sample_signal_out, os.path.join(debug_path, '{}_sig_{}_out.png'.format(filename, scheme)))
 
             with open(os.path.join(debug_path, '{}_dec_{}.wav'.format(filename, scheme)), 'wb') as output_file:
                 comp_audio.write_audio_file(output_file, 'wav')

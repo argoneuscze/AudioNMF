@@ -1,0 +1,11 @@
+# readme
+include README.md
+
+# license
+include LICENSE.txt
+
+# tests
+recursive-include tests *.py
+
+# requirements
+include requirements.txt

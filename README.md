@@ -4,27 +4,47 @@ This repository stores the implementation part of my Master's thesis.
 
 The text part is visible [**here**](https://github.com/argoneuscze/thesis).
 
-## TODO
+## About
 
-* Experiment with different chunk sizes / data types
-* Tinker with Nimfa NMF settings
-* Learn about CELT/SILK
-* Look into [GstPEAQ](https://github.com/HSU-ANT/gstpeaq) for measuring audio quality
-* Use STFT with windowing
+AudioNMF is a tool used to compress audio files in WAV format using non-negative matrix factorization.
+It's written entirely in Python 3 and is published under the [MIT](LICENSE.txt) license.
 
+There are three modes of operation:
 
-## Notes
+* *ANMF-RAW* - direct compression of samples
+* *ANMF-MDCT* - compression of the MDCT spectrogram
+* *ANMF-STFT* - compression of the STFT spectrogram
 
-* Input/Output is a two-channel PCM WAV 16-bit (unsigned)
-* Current workflow is WAV -> My custom format (ANMF) -> WAV, goal is for the ANMF
-  file to be smaller than the WAV while not noticeably losing quality
-* For now tried naively "folding" samples into a matrix
-* Time domain
-  * NMF on the entire song doesn't seem feasible
-  * Tried splitting the song into smaller chunks and running NMF on those, seems
-    viable, but file size is actually larger than before
-* Frequency domain
-  * Tried using FFT, but applying NMF to the frequency domain seems to cause
-    way too much distortion
-    * Possible error in implementation?
-  * MDCT doesn't seem applicable to spectral analysis, lossy compression of MDCT data leads to large aliasing
+In practice, however, only **ANMF-STFT** produces practical results.
+
+## Installation
+
+AudioNMF requires **Python 3** (3.5+ preferred) and can be installed by simply using:
+
+`python setup.py install`
+
+And to run the tests:
+
+`python setup.py test`
+
+**Note 1:** To ensure smooth installation, please make sure you have the latest versions
+of Python build tools, e.g.:
+
+`python -m pip install --upgrade pip setuptools wheel`
+
+**Note 2:** In case of issues when using Windows, it's recommended to install a pre-made
+scientific Python distribution, for example [Anaconda](https://www.anaconda.com/download/).
+
+## Usage
+
+After installation, simply run `audionmf`.
+
+To compress a file:
+
+`audionmf compress -c anmfs input.wav output.anmfs`
+
+To decompress:
+
+`audionmf decompress output.anmfs original.wav`
+
+The application can give you the possible options and arguments using `--help`.
