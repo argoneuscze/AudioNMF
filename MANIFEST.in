@@ -7,5 +7,8 @@ include LICENSE.txt
 # tests
 recursive-include tests *.py
 
+# tools
+recursive-include tools *.py
+
 # requirements
 include requirements.txt
