@@ -38,6 +38,7 @@ scientific Python distribution, for example [Anaconda](https://www.anaconda.com/
 ## Usage
 
 After installation, simply run `audionmf`.
+The only currently accepted filetype is a 16-bit signed integer WAV, ideally with a sampling rate of 44.1 KHz.
 
 To compress a file:
 
